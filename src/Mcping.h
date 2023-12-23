@@ -19,7 +19,7 @@ private:
 
 public:
     // Constructor
-    explicit Mcping(const std::string &server_addr, u_int16_t server_port=25565, int timeout=TCP_TIMEOUT); // why the explicit, I don't really know
+    explicit Mcping(std::string server_addr, u_int16_t server_port=25565, int timeout=TCP_TIMEOUT); // why the explicit, I don't really know
 
     void ping();
 

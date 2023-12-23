@@ -5,11 +5,12 @@
 #include "Mcping.h"
 #include <boost/asio.hpp>
 #include <iostream>
+#include <utility>
 
 
 // Constructor definition
-Mcping::Mcping(const std::string &server_addr, u_int16_t server_port, int timeout)
-: server_addr(server_addr), server_port(server_port), timeout(timeout) {
+Mcping::Mcping(std::string server_addr, u_int16_t server_port, int timeout)
+: server_addr(std::move(server_addr)), server_port(server_port), timeout(timeout) {
 
 }
 
@@ -22,7 +23,7 @@ void Mcping::ping() {
 
     // Resolve the server address and port
     tcp::resolver resolver(io_context);
-    // Both server address and port must be strings
+    // Server address and port must be strings
     auto endpoints = resolver.resolve(this->server_addr, std::to_string(this->server_port));
 
     // Create and connect the socket
