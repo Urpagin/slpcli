@@ -15,7 +15,10 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Add your source files (e.g., main.cpp)
 add_executable(McpingerCpp src/main.cpp
         src/Mcping.cpp
-        src/Mcping.h)
+        src/Mcping.h
+        src/DataTypesUtils.cpp
+        src/DataTypesUtils.h
+)
 
 # Link Boost libraries to your project
 target_link_libraries(McpingerCpp ${Boost_LIBRARIES})
