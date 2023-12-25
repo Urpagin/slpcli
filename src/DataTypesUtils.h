@@ -19,6 +19,11 @@ private:
 
 public:
     static std::vector<uint8_t> write_var_int(int value);
+
+    // function taken from https://github.com/LhAlant/MinecraftSLP/blob/main/MinecraftSLP.c
+    static uint64_t pack_varint(uint32_t number);
+
+    static uint8_t bytes_used(uint32_t number);
 };
 
 

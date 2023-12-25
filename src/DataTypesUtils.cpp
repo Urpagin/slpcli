@@ -21,3 +21,40 @@ std::vector<uint8_t> DataTypesUtils::write_var_int(int value) {
         value = static_cast<unsigned int>(value) >> 7;
     }
 }
+
+// TODO: read and thoroughly check the func
+// function taken from https://github.com/LhAlant/MinecraftSLP/blob/main/MinecraftSLP.c
+uint64_t DataTypesUtils::pack_varint(uint32_t number) {
+    /* Function to transform integers into variable size integer. Maximum size in effective bytes is 5.
+    More details : https://wiki.vg/Protocol#VarInt_and_VarLong */
+
+    uint64_t varint = 0;
+    while (true) {
+        varint <<= 8;
+
+        uint8_t tmp = number & 0x7F; //0b01111111
+        number >>= 7;
+
+        varint += tmp;
+        if (number != 0) {
+            varint |= 0x80; //0b10000000
+        } else break;
+    }
+    return varint;
+}
+
+
+uint8_t DataTypesUtils::bytes_used(uint32_t num) {
+    /* Counts the number of Bytes that any number takes. Ex: 255 or 1 is 1 and 256 is 2
+     * Function to find how many bytes aren't 0 in a function
+     * (example 0x0000abd8 uses only the last two bytes)
+     **/
+    if (num <= 0xFF) return (uint8_t) 1;
+
+    uint8_t bytes{0};
+    while (num != 0) {
+        num >>= 8;
+        ++bytes;
+    }
+    return bytes;
+}
