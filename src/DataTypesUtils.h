@@ -20,10 +20,14 @@ private:
 public:
     static std::vector<uint8_t> write_var_int(int value);
 
-    // function taken from https://github.com/LhAlant/MinecraftSLP/blob/main/MinecraftSLP.c
     static uint64_t pack_varint(uint32_t number);
 
-    static uint8_t bytes_used(uint32_t number);
+    static uint8_t bytes_used(uint32_t num);
+
+    static void insert_bytes_in_data(uint64_t dataByte, uint8_t **data, uint32_t *data_offset);
+
+    static void insert_string_in_data(const std::string &ip, uint32_t server_addr_length, uint8_t **data, uint32_t *data_offset);
+
 };
 
 

@@ -7,14 +7,15 @@ using boost::asio::ip::tcp;
 
 int main() {
 
-    Mcping serv("e", 4, 3);
+    Mcping serv("116.202.106.62", 25565, 3);
 
-    std::cout << "HEY" << std::endl;
-    std::vector<uint8_t> a = DataTypesUtils::write_var_int(999999);
+    serv.ping();
+  // std::cout << "HEY" << std::endl;
+  // std::vector<uint8_t> a = DataTypesUtils::write_var_int(999999);
 
-    for (uint8_t vec : a) {
-        std::cout << static_cast<int>(vec) << std::endl;
-    }
+  // for (uint8_t vec : a) {
+  //     std::cout << static_cast<int>(vec) << std::endl;
+  // }
 
 
 
