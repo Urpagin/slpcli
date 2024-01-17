@@ -26,7 +26,7 @@ public:
 
     static void insert_bytes_in_data(uint64_t dataByte, uint8_t **data, uint32_t *data_offset);
 
-    static void insert_string_in_data(const std::string &ip, uint32_t server_addr_length, uint8_t **data, uint32_t *data_offset);
+    static void insert_string_in_data(const std::string &ip, uint8_t **data, uint32_t *data_offset);
 
 };
 

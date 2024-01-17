@@ -1,0 +1,3 @@
+/home/urpagin/CLionProjects/McpingerCpp/cmake-build-release-1/CMakeFiles/McpingerCpp.dir
+/home/urpagin/CLionProjects/McpingerCpp/cmake-build-release-1/CMakeFiles/edit_cache.dir
+/home/urpagin/CLionProjects/McpingerCpp/cmake-build-release-1/CMakeFiles/rebuild_cache.dir

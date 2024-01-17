@@ -5,18 +5,18 @@
 
 using boost::asio::ip::tcp;
 
-int main() {
 
-    Mcping serv("82.66.201.61", 25565, 3);
+int main(int argc, char* argv[]) {
+
+    std::cout << "Server ip: ";
+    std::string ip;
+    std::cin >> ip;
+    std::cout << "Port (default is 25565) lqdksjfqkljm juste met in truc random j'ai lea dflellmmme de mettre ça now: ";
+    uint16_t port;
+    std::cin >> port;
+    Mcping serv(ip.c_str(), 25565, 3);
 
     serv.ping();
-  // std::cout << "HEY" << std::endl;
-  // std::vector<uint8_t> a = DataTypesUtils::write_var_int(999999);
-
-  // for (uint8_t vec : a) {
-  //     std::cout << static_cast<int>(vec) << std::endl;
-  // }
-
 
 
     return 0;
