@@ -47,20 +47,28 @@ void Mcping::ping() {
     // TODO: Make the tcp connection after packing the packet
 
 
+    // Uncompressed Packet format:
+    // VarInt: length_packet_id + data_length
+    // VarInt: packet_id
+    // ByteArray: data
+
+    // Handshake packet:
+
+
 
     //Handshake request:
-    //Varint: request length in bytes   (example : 1 + 1 + 9 + 2 + 1 = 14)
-    //Varint: packetID                  (example : 0)
-    //Varint: protocol Version          (example : pack_varint(760))
-    //Varint: Server address length     (example : 9)
+    //VarInt: request length in bytes   (example : 1 + 1 + 9 + 2 + 1 = 14)
+    //VarInt: packetID                  (example : 0)
+    //VarInt: protocol Version          (example : pack_varint(760))
+    //VarInt: Server address length     (example : 9)
     //String: Server address            (example : "127.0.0.1")
     //uint16_t: Server Port             (example : 25565)
-    //Varint: next state                (example : 0)
+    //VarInt: next state                (example : 0)
 
     // func returns an uint64, don't know why the LSP doesn't give a type warning/error as I'm assigning an uint32
     // https://github.com/LhAlant/MinecraftSLP/blob/main/MinecraftSLP.c#L34 ofc
-    uint32_t protocol_version_varint = DataTypesUtils::pack_varint(760); // todo: -1
-    uint8_t packet_id = 0;
+    uint32_t protocol_version_varint = DataTypesUtils::pack_varint(-1); // todo: -1
+    uint8_t packet_id = 0x00;
     uint32_t server_address_length = this->server_addr.size();
     uint8_t next_state = DataTypesUtils::pack_varint(1);
 
@@ -70,8 +78,10 @@ void Mcping::ping() {
                               + server_address_length
                               + 2  // Port uses 2 Bytes
                               + 1; // next_state is either 0 or 1, so 1 Byte
+
     server_address_length = DataTypesUtils::pack_varint(server_address_length); // Length will be sent as a varint
     uint32_t total_request_length = request_length + DataTypesUtils::bytes_used(request_length); // ???
+    std::cout << total_request_length << std::endl;
     auto *data = new uint8_t[total_request_length];
     //std::unique_ptr<uint8_t[]> data(new uint8_t[total_request_length]);
     uint32_t data_offset_ptr{0};
@@ -120,7 +130,7 @@ void Mcping::ping() {
     // Convert IPv4 and IPv6 addresses from text to binary
     if (inet_pton(AF_INET, this->server_addr.c_str(), &serv_addr.sin_addr)
         <= 0) {
-        printf("\nInvalid address/ Address not supported \n");
+        printf("\nInvalid address / Address not supported\n");
         exit(1);
     }
 
@@ -138,6 +148,9 @@ void Mcping::ping() {
 
     // The server will now send information, we need to read it.
     unpack_varint(&sock, &valread); // Total packet length, not needed
+
+
+
     uint8_t tmp;
     valread = read(sock, &tmp, 1);  //PacketID, not needed
     uint64_t stringLength = unpack_varint(&sock, &valread);

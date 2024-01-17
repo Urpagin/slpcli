@@ -7,7 +7,7 @@ using boost::asio::ip::tcp;
 
 int main() {
 
-    Mcping serv("116.202.106.62", 25565, 3);
+    Mcping serv("82.66.201.61", 25565, 3);
 
     serv.ping();
   // std::cout << "HEY" << std::endl;

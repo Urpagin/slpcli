@@ -18,6 +18,7 @@ add_executable(McpingerCpp src/main.cpp
         src/Mcping.h
         src/DataTypesUtils.cpp
         src/DataTypesUtils.h
+        src/DataTypesUtils.cpp
 )
 
 # Link Boost libraries to your project
