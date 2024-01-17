@@ -23,12 +23,12 @@ Mcping::Mcping(std::string server_addr, uint16_t server_port, int timeout)
 
 }
 
-uint64_t unpack_varint(int *sock, int *valread){
+uint64_t unpack_varint(int *sock, int *valread) {
     uint64_t unpackedVarint = 0;
     uint8_t tmp = 0x80;
     uint8_t i = 0;
 
-    while((tmp & 0x80) && i < 5) { // Add a limit to the number of iterations
+    while ((tmp & 0x80) && i < 5) { // Add a limit to the number of iterations
         *valread = read(*sock, &tmp, 1);
 
         if (*valread <= 0) { // Check for read errors or EOF
@@ -72,11 +72,11 @@ void Mcping::ping() {
     uint16_t next_state = DataTypesUtils::pack_varint(1); // 1 for status, 2 for login.
 
     uint8_t packet_data_length = DataTypesUtils::bytes_used(packet_id)
-            + 1 // packet_id is 1 Byte
-            + DataTypesUtils::bytes_used(protocol_version)
-            + server_address_length
-            + 2 // port uses 2 Bytes
-            + 1; // next_state is either 1 or 2, so uses 1 Byte
+                                 + 1 // packet_id is 1 Byte
+                                 + DataTypesUtils::bytes_used(protocol_version)
+                                 + server_address_length
+                                 + 2 // port uses 2 Bytes
+                                 + 1; // next_state is either 1 or 2, so uses 1 Byte
 
     // Total packet size. (remember that Packet: (VarInt)packet_length + data)
     uint8_t packet_length = DataTypesUtils::pack_varint(packet_data_length) + packet_data_length;
@@ -93,7 +93,8 @@ void Mcping::ping() {
     DataTypesUtils::insert_bytes_in_data(DataTypesUtils::pack_varint(server_address_length), &data, &data_offset_ptr);
     DataTypesUtils::insert_string_in_data(this->server_addr, &data, &data_offset_ptr);
     DataTypesUtils::insert_bytes_in_data(this->server_port, &data, &data_offset_ptr);
-    DataTypesUtils::insert_bytes_in_data(next_state, &data, &data_offset_ptr); // VarInt encodedNumbers under 128 not included remain the same
+    DataTypesUtils::insert_bytes_in_data(next_state, &data,
+                                         &data_offset_ptr); // VarInt encodedNumbers under 128 not included remain the same
 
     // Networking:
     //// -----------------------------
@@ -120,7 +121,7 @@ void Mcping::ping() {
     }
 
     if ((client_fd
-                 = connect(sock, (struct sockaddr*)&serv_addr,
+                 = connect(sock, (struct sockaddr *) &serv_addr,
                            sizeof(serv_addr)))
         < 0) {
         printf("\nConnection Failed \n");
@@ -137,10 +138,10 @@ void Mcping::ping() {
     valread = read(sock, &tmp, 1);  // PacketID, not needed
     uint16_t stringLength = unpack_varint(&sock, &valread);
 
-    char *buffer = (char*)malloc(stringLength);
+    char *buffer = (char *) malloc(stringLength);
     valread = read(sock, buffer, stringLength);
 
-    char *buffer2 = (char*)malloc(stringLength);
+    char *buffer2 = (char *) malloc(stringLength);
     valread = read(sock, buffer2, stringLength);
 
     //char *buffer3 = (char*)malloc(stringLength);

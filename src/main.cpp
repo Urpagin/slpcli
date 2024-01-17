@@ -6,7 +6,7 @@
 using boost::asio::ip::tcp;
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
 
     std::cout << "Server ip: ";
     std::string ip;

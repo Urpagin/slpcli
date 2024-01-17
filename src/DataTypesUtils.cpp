@@ -45,8 +45,6 @@ uint64_t DataTypesUtils::pack_varint(uint32_t number) {
 }
 
 
-
-
 uint8_t DataTypesUtils::bytes_used(uint32_t num) {
     /* Counts the number of Bytes that any number takes. Ex: 255 or 1 is 1 and 256 is 2 Byte
      * Function to find how many bytes aren't 0 in a function
@@ -75,7 +73,7 @@ void DataTypesUtils::insert_bytes_in_data(uint64_t dataByte, uint8_t **data, uin
 
 void DataTypesUtils::insert_string_in_data(const std::string &ip, uint8_t **data, uint32_t *data_offset) {
     // Inserts a string into the data variable
-    for (const char &c : ip) {
+    for (const char &c: ip) {
         *(*data + *data_offset) = c;
         ++(*data_offset);
     }
