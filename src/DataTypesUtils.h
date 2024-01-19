@@ -18,7 +18,7 @@ private:
     static constexpr int CONTINUE_BIT = 0x80; // 128 in decimal
 
 public:
-    static std::vector<uint8_t> write_var_int(int value);
+    static std::vector<uint8_t> write_var_int(uint64_t value);
 
     static uint64_t pack_varint(uint32_t number);
 

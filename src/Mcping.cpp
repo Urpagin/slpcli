@@ -27,6 +27,7 @@ uint64_t unpack_varint(int *sock, int *valread) {
     uint64_t unpackedVarint = 0;
     uint8_t tmp = 0x80;
     uint8_t i = 0;
+    int a;
 
     while ((tmp & 0x80) && i < 5) { // Add a limit to the number of iterations
         *valread = read(*sock, &tmp, 1);

@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Port (default is 25565) lqdksjfqkljm juste met in truc random j'ai lea dflellmmme de mettre ça now: ";
     uint16_t port;
     std::cin >> port;
+    // TODO: timeout
     Mcping serv(ip.c_str(), 25565, 3);
 
     serv.ping();

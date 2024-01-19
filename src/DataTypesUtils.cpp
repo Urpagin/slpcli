@@ -7,7 +7,7 @@
 
 // inspiration from https://github.com/LhAlant/MinecraftSLP/blob/main/MinecraftSLP.c
 
-std::vector<uint8_t> DataTypesUtils::write_var_int(int value) {
+std::vector<uint8_t> DataTypesUtils::write_var_int(uint64_t value) {
     // Code logic from https://wiki.vg/Protocol#VarInt_and_VarLong
 
     std::vector<uint8_t> var_int{}; // Byte by Byte vector
@@ -20,7 +20,7 @@ std::vector<uint8_t> DataTypesUtils::write_var_int(int value) {
 
         var_int.emplace_back((value & SEGMENT_BITS) | CONTINUE_BIT);
         // Ensure logical right shift for negative numbers
-        value = static_cast<unsigned int>(value) >> 7;
+        value = value >> 7;
     }
 }
 
