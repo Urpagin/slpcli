@@ -4,6 +4,7 @@
 /cmake-build-relwithdebinfo/
 /cmake-build-release/
 /cmake-build-release-1/
+/.idea/
 
 # Prerequisites
 *.d
