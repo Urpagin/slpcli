@@ -97,6 +97,9 @@ void Mcping::ping() {
     DataTypesUtils::insert_bytes_in_data(next_state, &data,
                                          &data_offset_ptr); // VarInt encodedNumbers under 128 not included remain the same
 
+    for (size_t c = 0; c < packet_length; ++c) {
+        std::cout << "data[" << c << "] " << static_cast<int>(data[c]) << ": char: " << static_cast<char>(data[c]) << std::endl;
+    }
     // Networking:
     //// -----------------------------
     uint8_t status_request_packet[2] = {1, 0};
