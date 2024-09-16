@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/McpingerCpp.dir/src/main.cpp.o CMakeFiles/McpingerCpp.dir/src/Mcping.cpp.o CMakeFiles/McpingerCpp.dir/src/DataTypesUtils.cpp.o -o McpingerCpp  /usr/lib64/libboost_system.a 
