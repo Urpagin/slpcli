@@ -95,11 +95,15 @@ void Mcping::ping() {
     DataTypesUtils::insert_string_in_data(this->server_addr, &data, &data_offset_ptr);
     DataTypesUtils::insert_bytes_in_data(this->server_port, &data, &data_offset_ptr);
     DataTypesUtils::insert_bytes_in_data(next_state, &data,
-                                         &data_offset_ptr); // VarInt encodedNumbers under 128 not included remain the same
+                                         &data_offset_ptr); // VarInt encodedNumbers under 127 included remain the same.
 
+    std::string packet_data{};
     for (size_t c = 0; c < packet_length; ++c) {
-        std::cout << "data[" << c << "] " << static_cast<int>(data[c]) << ": char: " << static_cast<char>(data[c]) << std::endl;
+        packet_data += data[c];
     }
+
+    std::cout << "packet_data = " << packet_data << std::endl;
+
     // Networking:
     //// -----------------------------
     uint8_t status_request_packet[2] = {1, 0};

@@ -1,0 +1,3 @@
+/home/urpagin/McpingerCpp/build/CMakeFiles/McpingerCpp.dir
+/home/urpagin/McpingerCpp/build/CMakeFiles/edit_cache.dir
+/home/urpagin/McpingerCpp/build/CMakeFiles/rebuild_cache.dir
