@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 project(McpingerCpp)
 
 set(CMAKE_CXX_STANDARD 23)
+cmake_policy(SET CMP0167 NEW)
 
 # Set Boost to use static libraries
 set(Boost_USE_STATIC_LIBS ON)

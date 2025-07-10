@@ -45,20 +45,18 @@ uint64_t DataTypesUtils::pack_varint(uint32_t number) {
 }
 
 
-uint8_t DataTypesUtils::bytes_used(uint32_t num) {
-    /* Counts the number of Bytes that any number takes. Ex: 255 or 1 is 1 and 256 is 2 Byte
-     * Function to find how many bytes aren't 0 in a function
-     * (example 0x0000abd8 uses only the last two bytes)
-     **/
-    if (num <= 0xFF) return (uint8_t) 1;
 
-    uint8_t bytes{0};
+uint8_t DataTypesUtils::bytes_used(uint32_t num) {
+    // Counts how many non-zero bytes are needed to represent a number.
+    // Example: 0x000000FF → 1, 0x00000100 → 2
+    uint8_t bytes = 0;
     while (num != 0) {
-        num >>= 8;
         ++bytes;
+        num >>= 8;
     }
-    return bytes;
+    return bytes == 0 ? 1 : bytes; // Ensures 0 still counts as 1 byte.
 }
+
 
 
 void DataTypesUtils::insert_bytes_in_data(uint64_t dataByte, uint8_t **data, uint32_t *data_offset) {

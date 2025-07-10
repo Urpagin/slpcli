@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     std::pair<std::string, uint16_t> address = read_server_address(argc, argv);
     std::string ip = domain_to_ipv4(address.first);
 
-    std::cout << "Pinging '" << address.first << ":" << address.second << "'." << std::endl;
+    std::cout << "Pinging '" << address.first << ":" << address.second << "' (" << ip << ")" << std::endl;
 
     Mcping serv(ip.c_str(), address.second, 3);
 

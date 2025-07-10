@@ -49,7 +49,7 @@ void Mcping::ping() {
 
 
     // [Uncompressed Packet Format]:
-    // VarInt: length_packet_id + data_length
+    // VarInt: Length of packet_id and data
     // VarInt: packet_id
     // ByteArray: data
 
@@ -72,15 +72,15 @@ void Mcping::ping() {
     uint8_t server_address_length = this->server_addr.size(); // IPv4 address, max size is 15: (255.255.255.255)
     uint16_t next_state = DataTypesUtils::pack_varint(1); // 1 for status, 2 for login.
 
-    uint8_t packet_data_length = DataTypesUtils::bytes_used(packet_id)
-                                 + 1 // packet_id is 1 Byte
-                                 + DataTypesUtils::bytes_used(protocol_version)
-                                 + server_address_length
-                                 + 2 // port uses 2 Bytes
+    uint8_t packet_data_length =  1                                                     // packet_id is 1 Byte
+                                 + DataTypesUtils::bytes_used(protocol_version)         // Number of bytes used by the protocol version
+                                 + DataTypesUtils::bytes_used(server_address_length)    // Number of bytes of the String prefix
+                                 + server_address_length                                // Number of bytes in the actual String (UTF-8) (we assume it's ASCII)
+                                 + 2 // port uses 2 Bytes (Unsigned Short)
                                  + 1; // next_state is either 1 or 2, so uses 1 Byte
 
     // Total packet size. (remember that Packet: (VarInt)packet_length + data)
-    uint8_t packet_length = DataTypesUtils::pack_varint(packet_data_length) + packet_data_length;
+    uint8_t packet_length = DataTypesUtils::bytes_used(DataTypesUtils::pack_varint(packet_data_length)) + packet_data_length;
     //std::cout << "Total packet length: " << (int)packet_length << std::endl;
 
     // Building the Handshake packet
@@ -91,8 +91,11 @@ void Mcping::ping() {
     DataTypesUtils::insert_bytes_in_data(DataTypesUtils::pack_varint(packet_data_length), &data, &data_offset_ptr);
     DataTypesUtils::insert_bytes_in_data(packet_id, &data, &data_offset_ptr);
     DataTypesUtils::insert_bytes_in_data(protocol_version, &data, &data_offset_ptr);
+
+    // Server Address String
     DataTypesUtils::insert_bytes_in_data(DataTypesUtils::pack_varint(server_address_length), &data, &data_offset_ptr);
     DataTypesUtils::insert_string_in_data(this->server_addr, &data, &data_offset_ptr);
+
     DataTypesUtils::insert_bytes_in_data(this->server_port, &data, &data_offset_ptr);
     DataTypesUtils::insert_bytes_in_data(next_state, &data,
                                          &data_offset_ptr); // VarInt encodedNumbers under 127 included remain the same.
@@ -102,7 +105,7 @@ void Mcping::ping() {
         packet_data += data[c];
     }
 
-    std::cout << "packet_data = " << packet_data << std::endl;
+    std::cout << "Handshake packet in string: " << packet_data << std::endl;
 
     // Networking:
     //// -----------------------------
