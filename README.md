@@ -2,13 +2,17 @@
 
 A simple C++ tool to query the SLP (Status List Ping) of a Minecraft Notchian (Java Edition) server.
 
+---
+
 <small>A naive implementation of the SLP (Server List Ping) protocol in C++.</small>
 
 # Usage
 
-`./McpingerCpp <server> <?port>`
+`./McpingerCpp <server> <?port>`  
+or  
+`./McpingerCpp <server>:<?port>`
 
-E.g., `./McpingerCpp mc.hypixel.net` or `./McPingerCpp a.minecraft.server 25570`
+E.g., `./McpingerCpp mc.hypixel.net` or `./McPingerCpp mc.server.net:25570`
 
 ## Options
 
@@ -34,9 +38,11 @@ make -j$(nproc)
 
 ## Platforms
 
-* Linux-based:  OK
-* MacOS:        MAYBE
-* Windows:      NO
+| OS      | Compatibility |
+|---------|---------------|
+| Linux   | YES ✅         |
+| MacOS   | MAYBE 🤔       |
+| Windows | NO ❌          |
 
 ## C++ Version
 
