@@ -95,7 +95,33 @@ std::string domain_to_ipv4(const std::string &domain) {
   return std::string(ipStr);
 }
 
-std::pair<std::string, uint16_t> read_server_address(int argc, char *argv[]) {
+
+
+// `argc`,`argv` come from `main(int argc, char* argv[])`
+std::vector<char*> make_argv_without_quiet(int argc, char* argv[])
+{
+    std::vector<char*> filtered;
+    filtered.reserve(argc);           // at most `argc` entries
+
+    filtered.push_back(argv[0]);      // keep the program name
+
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string_view a{argv[i]};
+        if (a == "-q" || a == "--quiet")   // skip the “quiet” flags
+            continue;
+        filtered.push_back(argv[i]);
+    }
+
+    filtered.push_back(nullptr);      // for Unix-style `argv` termination
+    return filtered;                  // `filtered.size()-1` is the new argc
+}
+
+std::pair<std::string, uint16_t> read_server_address(int argc_, char *argv_[]) {
+  auto new_argv_vec = make_argv_without_quiet(argc_, argv_);
+  int  argc     = static_cast<int>(new_argv_vec.size()) - 1;
+  char** argv   = new_argv_vec.data();
+
   std::string usage_str = std::format(
       "Error: incorrect usage.\n\nUsages:\n\t{} "
       "<address>:<port>\n\n\tor\n\n\t{} <address> <port>\n\nInfo:\n\tDefault "
@@ -111,6 +137,8 @@ std::pair<std::string, uint16_t> read_server_address(int argc, char *argv[]) {
   const char *DELIMITER = ":";
   // Default port
   uint16_t port{25565};
+
+
 
   try {
     if (argc < 3) {
