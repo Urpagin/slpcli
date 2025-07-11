@@ -1,198 +1,256 @@
 //
-// Created by urpagin on 01/12/2023.
+// Created by Urpagin on 2023-12-01.
 //
 
 #include "Mcping.h"
+#include <algorithm>
+#include <array>
 #include <boost/asio.hpp>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <iomanip>
+#include <ios>
 #include <iostream>
+#include <ostream>
+#include <sstream>
+#include <string>
 #include <sys/socket.h>
 
-#include <utility>
 #include "DataTypesUtils.h"
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <unistd.h>
+#include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
+#include <utility>
+#include <vector>
 
 // Constructor definition
 Mcping::Mcping(std::string server_addr, uint16_t server_port, int timeout)
-        : server_addr(std::move(server_addr)), server_port(server_port), timeout(timeout) {
+    : server_addr(std::move(server_addr)), server_port(server_port),
+      timeout(timeout) {}
 
-}
+int unpack_varint(int sock, uint64_t *out) {
+  uint64_t result = 0;
+  uint8_t byte = 0;
+  int bytes_read = 0;
 
-uint64_t unpack_varint(int *sock, int *valread) {
-    uint64_t unpackedVarint = 0;
-    uint8_t tmp = 0x80;
-    uint8_t i = 0;
-    int a;
+  for (int i = 0; i < 5; ++i) {
+    ssize_t r = read(sock, &byte, 1);
+    printf("VARINT BYTE: %X\n", byte);
 
-    while ((tmp & 0x80) && i < 5) { // Add a limit to the number of iterations
-        *valread = read(*sock, &tmp, 1);
+    if (r <= 0)
+      return -1; // error or EOF
 
-        if (*valread <= 0) { // Check for read errors or EOF
-            // Handle the error or EOF
-            break;
-        }
+    // byte & 0x7F is the actual data bits, without the continuation bit
+    result |= (byte & 0x7F) << (7 * i);
+    bytes_read++;
 
-        unpackedVarint |= (tmp & 0x7F) << (7 * i);
-        i++;
+    // If the continuation bit on the byte is 0, we return.
+    if (!(byte & 0x80)) {
+      *out = result;
+      return bytes_read;
     }
-    return unpackedVarint;
+  }
+
+  return -1; // Too many bytes, malformed VarInt
 }
 
+static std::string hex_str(const uint8_t *data, int len) {
+  std::stringstream ss;
+  ss << std::hex;
+
+  for (int i(0); i < len; ++i)
+    ss << std::setw(2) << std::setfill('0') << (int)data[i];
+
+  return ss.str();
+}
+
+/// A function that reads the string bytes from sock.
+/// Returns -1 if error.
+static ssize_t read_json_string(int sock, std::size_t bytes_needed,
+                                std::vector<std::uint8_t> &out) {
+  constexpr std::size_t BUF_SIZE = 256;
+  std::array<std::uint8_t, BUF_SIZE> tmp;
+  out.clear();
+  out.reserve(bytes_needed);
+
+  while (out.size() < bytes_needed) {
+    size_t to_read = std::min(BUF_SIZE, bytes_needed - out.size());
+    ssize_t r = ::read(sock, tmp.data(), to_read);
+    if (r <= 0)
+      return r; // EOF or error
+
+    out.insert(out.end(), tmp.begin(), tmp.begin() + r);
+  }
+  return static_cast<ssize_t>(out.size());
+}
 
 void Mcping::ping() {
-    // TODO: Make the tcp connection after packing the packet
+  // TODO: Make the tcp connection after packing the packet
 
+  // [Uncompressed Packet Format]:
+  // VarInt: Length of packet_id and data
+  // VarInt: packet_id
+  // ByteArray: data
 
-    // [Uncompressed Packet Format]:
-    // VarInt: Length of packet_id and data
-    // VarInt: packet_id
-    // ByteArray: data
+  // [String Format]: UTF-8 string prefixed with its size in bytes as a VarInt.
 
+  // [Handshake Packet Format]:
+  // VarInt: request length in bytes   (example : 1 + 1 + 9 + 2 + 1 = 14)
+  // VarInt: packetID                  (example : 0)
+  // VarInt: protocol version          (example : pack_varint(760))
+  // VarInt: server address length     (example : 9)
+  // String: server address            (example : "127.0.0.1")
+  // uint16_t: server port             (example : 25565)
+  // VarInt: next state                (example : 0)
 
-    // [String Format]: UTF-8 string prefixed with its size in bytes as a VarInt.
+  // Preparing the Handshake packet
+  uint8_t packet_id{0x00}; // 0x00 VarInt encoded remains 0x00.
+  uint8_t protocol_version = DataTypesUtils::pack_varint(
+      -1); // if the client doesn't know, default to -1.
+  uint8_t server_address_length =
+      this->server_addr
+          .size(); // IPv4 address, max size is 15: (255.255.255.255)
+  uint16_t next_state =
+      DataTypesUtils::pack_varint(1); // 1 for status, 2 for login.
 
+  uint8_t packet_data_length =
+      1 // packet_id is 1 Byte
+      + DataTypesUtils::bytes_used(
+            protocol_version) // Number of bytes used by the protocol version
+      + DataTypesUtils::bytes_used(
+            server_address_length) // Number of bytes of the String prefix
+      + server_address_length // Number of bytes in the actual String (UTF-8)
+                              // (we assume it's ASCII)
+      + 2                     // port uses 2 Bytes (Unsigned Short)
+      + 1;                    // next_state is either 1 or 2, so uses 1 Byte
 
-    // [Handshake Packet Format]:
-    // VarInt: request length in bytes   (example : 1 + 1 + 9 + 2 + 1 = 14)
-    // VarInt: packetID                  (example : 0)
-    // VarInt: protocol version          (example : pack_varint(760))
-    // VarInt: server address length     (example : 9)
-    // String: server address            (example : "127.0.0.1")
-    // uint16_t: server port             (example : 25565)
-    // VarInt: next state                (example : 0)
+  // Total packet size. (remember that Packet: (VarInt)packet_length + data)
+  uint8_t packet_length = DataTypesUtils::bytes_used(
+                              DataTypesUtils::pack_varint(packet_data_length)) +
+                          packet_data_length;
+  // std::cout << "Total packet length: " << (int)packet_length << std::endl;
 
-    // Preparing the Handshake packet
-    uint8_t packet_id{0x00}; // 0x00 VarInt encoded remains 0x00.
-    uint8_t protocol_version = DataTypesUtils::pack_varint(-1); // if the client doesn't know, default to -1.
-    uint8_t server_address_length = this->server_addr.size(); // IPv4 address, max size is 15: (255.255.255.255)
-    uint16_t next_state = DataTypesUtils::pack_varint(1); // 1 for status, 2 for login.
+  // Building the Handshake packet
 
-    uint8_t packet_data_length =  1                                                     // packet_id is 1 Byte
-                                 + DataTypesUtils::bytes_used(protocol_version)         // Number of bytes used by the protocol version
-                                 + DataTypesUtils::bytes_used(server_address_length)    // Number of bytes of the String prefix
-                                 + server_address_length                                // Number of bytes in the actual String (UTF-8) (we assume it's ASCII)
-                                 + 2 // port uses 2 Bytes (Unsigned Short)
-                                 + 1; // next_state is either 1 or 2, so uses 1 Byte
+  auto *data = new uint8_t[packet_length];
+  uint32_t data_offset_ptr{0};
 
-    // Total packet size. (remember that Packet: (VarInt)packet_length + data)
-    uint8_t packet_length = DataTypesUtils::bytes_used(DataTypesUtils::pack_varint(packet_data_length)) + packet_data_length;
-    //std::cout << "Total packet length: " << (int)packet_length << std::endl;
+  DataTypesUtils::insert_bytes_in_data(
+      DataTypesUtils::pack_varint(packet_data_length), &data, &data_offset_ptr);
+  DataTypesUtils::insert_bytes_in_data(packet_id, &data, &data_offset_ptr);
+  DataTypesUtils::insert_bytes_in_data(protocol_version, &data,
+                                       &data_offset_ptr);
 
-    // Building the Handshake packet
+  // Server Address String
+  DataTypesUtils::insert_bytes_in_data(
+      DataTypesUtils::pack_varint(server_address_length), &data,
+      &data_offset_ptr);
+  DataTypesUtils::insert_string_in_data(this->server_addr, &data,
+                                        &data_offset_ptr);
 
-    auto *data = new uint8_t[packet_length];
-    uint32_t data_offset_ptr{0};
+  DataTypesUtils::insert_bytes_in_data(this->server_port, &data,
+                                       &data_offset_ptr);
+  DataTypesUtils::insert_bytes_in_data(
+      next_state, &data,
+      &data_offset_ptr); // VarInt encodedNumbers under 127 included remain the
+                         // same.
 
-    DataTypesUtils::insert_bytes_in_data(DataTypesUtils::pack_varint(packet_data_length), &data, &data_offset_ptr);
-    DataTypesUtils::insert_bytes_in_data(packet_id, &data, &data_offset_ptr);
-    DataTypesUtils::insert_bytes_in_data(protocol_version, &data, &data_offset_ptr);
+  std::cout << "Handshake packet in string: " << hex_str(data, packet_length)
+            << std::endl;
 
-    // Server Address String
-    DataTypesUtils::insert_bytes_in_data(DataTypesUtils::pack_varint(server_address_length), &data, &data_offset_ptr);
-    DataTypesUtils::insert_string_in_data(this->server_addr, &data, &data_offset_ptr);
+  // -------- Networking --------
+  uint8_t status_request_packet[2] = {1, 0};
 
-    DataTypesUtils::insert_bytes_in_data(this->server_port, &data, &data_offset_ptr);
-    DataTypesUtils::insert_bytes_in_data(next_state, &data,
-                                         &data_offset_ptr); // VarInt encodedNumbers under 127 included remain the same.
+  // Initializing socket
+  int sock = 0, valread, client_fd;
+  struct sockaddr_in serv_addr;
 
-    std::string packet_data{};
-    for (size_t c = 0; c < packet_length; ++c) {
-        packet_data += data[c];
-    }
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    printf("\n Socket creation error \n");
+    exit(1);
+  }
 
-    std::cout << "Handshake packet in string: " << packet_data << std::endl;
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_port = htons(this->server_port);
 
-    // Networking:
-    //// -----------------------------
-    uint8_t status_request_packet[2] = {1, 0};
+  // Convert IPv4 and IPv6 addresses from text to binary
+  if (inet_pton(AF_INET, this->server_addr.c_str(), &serv_addr.sin_addr) <= 0) {
+    printf("\nInvalid address / Address not supported\n");
+    exit(1);
+  }
 
+  if ((client_fd = connect(sock, (struct sockaddr *)&serv_addr,
+                           sizeof(serv_addr))) < 0) {
+    printf("\nConnection Failed \n");
+    exit(1);
+  }
 
-    //Initializing socket
-    int sock = 0, valread, client_fd;
-    struct sockaddr_in serv_addr;
+  // --- Sending the data ---
+  // Send the Handshake packet to the server
+  if (send(sock, data, packet_length, 0) != packet_length) {
+    printf("Error sending the Handshake packet to the server!\n");
+    exit(1);
+  }
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("\n Socket creation error \n");
-        exit(1);
-    }
+  // Sends the status request packet
+  if (send(sock, status_request_packet, 2, 0) != 2) {
+    printf("Error sending the Status Request packet to the server\n");
+    exit(1);
+  }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(this->server_port);
+  // ----- READING SERVER -----
 
-    // Convert IPv4 and IPv6 addresses from text to binary
-    if (inet_pton(AF_INET, this->server_addr.c_str(), &serv_addr.sin_addr)
-        <= 0) {
-        printf("\nInvalid address / Address not supported\n");
-        exit(1);
-    }
+  // Read packet length (VarInt)
+  uint64_t srv_p_len;
+  if (unpack_varint(sock, &srv_p_len) < 1) {
+    printf("Error reading the Status Response length\n");
+    exit(1);
+  }
+  printf("Status Response packet length: %ld\n", srv_p_len);
 
-    if ((client_fd
-                 = connect(sock, (struct sockaddr *) &serv_addr,
-                           sizeof(serv_addr)))
-        < 0) {
-        printf("\nConnection Failed \n");
-        exit(1);
-    }
+  // Read packet ID (VarInt, but 0x00 is still 0x00)
+  uint8_t srv_p_id;
+  if (read(sock, &srv_p_id, 1) < 1) {
+    printf("Error reading the Status Response ID\n");
+    exit(1);
+  }
+  printf("Status Response packet ID: %d\n", srv_p_id);
+  if (srv_p_id != 0) {
+    printf("Status Response ID is incorrect; expected 0x00, got 0x%02X\n",
+           srv_p_id);
+  }
 
-    //Sending the data
-    send(sock, data, packet_length, 0); //Sends the data to the server
-    send(sock, status_request_packet, 2, 0);   //Sends the status request packet
+  uint64_t srv_str_len;
+  if (unpack_varint(sock, &srv_str_len) < 1) {
+    printf("Error reading the Status Response string length\n");
+    exit(1);
+  }
+  printf("Status Response string length: %ld\n", srv_str_len);
+  if (srv_str_len >= srv_p_len) {
+    printf("Status Response string length is greater than the packet itself; "
+           "nonsense.\n");
+    exit(1);
+  }
 
-    // The server will now send information, we need to read it.
-    unpack_varint(&sock, &valread); //Total packet length, not needed
-    uint8_t tmp;
-    valread = read(sock, &tmp, 1);  // PacketID, not needed
-    uint16_t stringLength = unpack_varint(&sock, &valread);
+  // Read the JSON bytes.
+  std::vector<uint8_t> json_data;
+  json_data.reserve(srv_str_len);
+  read_json_string(sock, (size_t)srv_str_len, json_data);
 
-    char *buffer = (char *) malloc(stringLength);
-    valread = read(sock, buffer, stringLength);
+  std::string json_string(json_data.begin(), json_data.end());
+  std::cout << json_string << std::endl;
 
-    char *buffer2 = (char *) malloc(stringLength);
-    valread = read(sock, buffer2, stringLength);
+  // std::cout << "\n\n\n\n" << buff << std::endl;
 
-    //char *buffer3 = (char*)malloc(stringLength);
-    //valread = read(sock, buffer3, stringLength);
+  // closing the connected socket
+  close(client_fd);
 
-
-
-
-
-    //printf("%s\n", buffer3);
-
-    std::string buff{};
-    buff.reserve(stringLength);
-
-    for (size_t i{0}; i < stringLength; ++i) {
-        if (buffer[i] == '\0')
-            break;
-        buff += buffer[i];
-    }
-
-    for (size_t i{0}; i < stringLength; ++i) {
-        if (buffer2[i] == '\0')
-            break;
-        buff += buffer2[i];
-    }
-
-    //for (size_t i{0}; i < stringLength; ++i) {
-    //    if (buffer3[i] == '\0')
-    //        break;
-    //    buff += buffer3[i];
-    //}
-
-    std::cout << "\n\n\n\n" << buff << std::endl;
-
-    // closing the connected socket
-    close(client_fd);
-
-    free(data);
-    free(buffer);
-
-
+  free(data);
+  // free(buffer);
 }
-
