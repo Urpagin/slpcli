@@ -1,14 +1,13 @@
 #include "DataTypesUtils.h"
 #include "Mcping.h"
-#include <boost/asio.hpp>
 #include <cstdint>
-#include <cstdio>
+#include <format>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include <utility>
+#include <cstring>
 
-using boost::asio::ip::tcp;
 
 #include <arpa/inet.h>
 #include <iostream>
@@ -65,6 +64,12 @@ std::string domain_to_ipv4(const std::string &domain) {
 }
 
 std::pair<std::string, uint16_t> read_server_address(int argc, char *argv[]) {
+  std::string usage_str = std::format("");
+  // auto usage_str = std::format()
+  //   std
+  //   + std::string
+  //   + std::string(argv[0]) + "fe" + "eff" + "efkj";
+
   if (argc < 2) {
     std::cerr << "Invalid usage: " << argv[0]
               << " <address>:<port> (port default is 25565)";

@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-set -eou -pipefail
+mkdir -p ./build/ && cd ./build/
 
-mkdir -p ./build/
-cd ./build/
-
-cmake .. .
-make -j$(nproc)
+cmake .. && make -j$(nproc)
 
 printf "\n\n"
 ./McpingerCpp "$@"

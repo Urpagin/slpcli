@@ -5,7 +5,6 @@
 #include "Mcping.h"
 #include <algorithm>
 #include <array>
-#include <boost/asio.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
