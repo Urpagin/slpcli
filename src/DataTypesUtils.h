@@ -6,18 +6,18 @@
 #define MCPINGERCPP_DATATYPESUTILS_H
 
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 class DataTypesUtils {
-private:
+ private:
   // Private constructor to prevent instantiation. It's a utility class
   DataTypesUtils() = default;
 
-  static constexpr int SEGMENT_BITS = 0x7F; // 127 in decimal
-  static constexpr int CONTINUE_BIT = 0x80; // 128 in decimal
+  static constexpr int SEGMENT_BITS = 0x7F;  // 127 in decimal
+  static constexpr int CONTINUE_BIT = 0x80;  // 128 in decimal
 
-public:
+ public:
   static std::vector<uint8_t> write_var_int(uint64_t value);
 
   static uint64_t pack_varint(uint32_t number);
@@ -32,4 +32,4 @@ public:
 };
 
 // test
-#endif // MCPINGERCPP_DATATYPESUTILS_H
+#endif  // MCPINGERCPP_DATATYPESUTILS_H

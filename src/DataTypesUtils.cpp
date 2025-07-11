@@ -3,6 +3,7 @@
 //
 
 #include "DataTypesUtils.h"
+
 #include <string>
 
 // inspiration from
@@ -11,7 +12,7 @@
 std::vector<uint8_t> DataTypesUtils::write_var_int(uint64_t value) {
   // Code logic from https://wiki.vg/Protocol#VarInt_and_VarLong
 
-  std::vector<uint8_t> var_int{}; // Byte by Byte vector
+  std::vector<uint8_t> var_int{};  // Byte by Byte vector
 
   while (true) {
     if ((value & ~SEGMENT_BITS) == 0) {
@@ -35,12 +36,12 @@ uint64_t DataTypesUtils::pack_varint(uint32_t number) {
   while (true) {
     varint <<= 8;
 
-    uint8_t tmp = number & 0x7F; // 0b01111111
+    uint8_t tmp = number & 0x7F;  // 0b01111111
     number >>= 7;
 
     varint += tmp;
     if (number != 0) {
-      varint |= 0x80; // 0b10000000
+      varint |= 0x80;  // 0b10000000
     } else
       break;
   }
@@ -55,7 +56,7 @@ uint8_t DataTypesUtils::bytes_used(uint32_t num) {
     ++bytes;
     num >>= 8;
   }
-  return bytes == 0 ? 1 : bytes; // Ensures 0 still counts as 1 byte.
+  return bytes == 0 ? 1 : bytes;  // Ensures 0 still counts as 1 byte.
 }
 
 void DataTypesUtils::insert_bytes_in_data(uint64_t dataByte, uint8_t **data,
@@ -64,8 +65,8 @@ void DataTypesUtils::insert_bytes_in_data(uint64_t dataByte, uint8_t **data,
   for (int64_t i = DataTypesUtils::bytes_used(dataByte) - 1; i >= 0; i--) {
     // Similar to data[*data_offset] in high-level structures like std::vector,
     // but using pointer arithmetic.
-    *(*data + *data_offset) =
-        (dataByte >> (i * 8)) & (0xFF); // Selects the right byte to put in data
+    *(*data + *data_offset) = (dataByte >> (i * 8)) &
+                              (0xFF);  // Selects the right byte to put in data
     (*data_offset)++;
   }
 }

@@ -8,23 +8,24 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
 
 // TODO: UnitTesting
 class Mcping {
-private:
-  static constexpr int TCP_TIMEOUT = 5; // in seconds
-
+ private:
   std::string server_addr;
   u_int16_t server_port;
   int timeout;
 
-public:
-  // Constructor
-  explicit Mcping(
-      std::string server_addr, uint16_t server_port = 25565,
-      int timeout = TCP_TIMEOUT); // why the explicit, I don't really know
+ public:
 
-  void ping();
+	// Constructor
+	// why the explicit, I don't really know
+	explicit Mcping(std::string server_addr, uint16_t server_port = 25565);
+
+
+	/// Queries the Minecraft notchian server using the Server List Ping protocol and returns a JSON string.
+	std::string query_slp();
 };
 
-#endif // MCPINGERCPP_MCPING_H
+#endif  // MCPINGERCPP_MCPING_H
