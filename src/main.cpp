@@ -45,16 +45,13 @@ int main(int argc, char *argv[]) {
   if (is_quiet(argc, argv)) silence_stdout_stderr();
 
   std::pair<std::string, uint16_t> address = read_server_address(argc, argv);
-  std::string ip = domain_to_ipv4(address.first);
-  if (ip.empty()) {
-    std::cerr << "Error: failed to resolve address" << std::endl;
-    exit(1);
-  }
+  const std::string addr = address.first;
+  const uint16_t port = address.second;
 
-  std::cout << "Querying '" << address.first << ":" << address.second
-            << "'... (" << ip << ")\n\n" << std::endl;
+  std::cout << "Querying '" << addr << ":" << port 
+            << "'...\n\n" << std::endl;
 
-  Mcping serv(ip.c_str(), address.second);
+  Mcping serv(addr, port);
 
   std::string slp_response{serv.query_slp()};
 
@@ -64,40 +61,11 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-std::string domain_to_ipv4(const std::string &domain) {
-  struct addrinfo hints, *res, *p;
-  int status;
-  char ipStr[INET_ADDRSTRLEN];
-
-  memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_INET;  // AF_INET for IPv4
-  hints.ai_socktype = SOCK_STREAM;
-
-  if ((status = getaddrinfo(domain.c_str(), nullptr, &hints, &res)) != 0) {
-    std::cerr << "Error: getaddrinfo: " << gai_strerror(status) << std::endl;
-    return "";
-  }
-
-  for (p = res; p != nullptr; p = p->ai_next) {
-    void *addr;
-    // get the pointer to the address itself,
-    // different fields in IPv4 and IPv6:
-    struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
-    addr = &(ipv4->sin_addr);
-
-    // convert the IP to a string and print it:
-    inet_ntop(p->ai_family, addr, ipStr, sizeof ipStr);
-    break;  // if we just want the first IP
-  }
-
-  freeaddrinfo(res);  // free the linked listj
-
-  return std::string(ipStr);
-}
 
 
 
 // `argc`,`argv` come from `main(int argc, char* argv[])`
+// Removes the -q|--quiet argument from argv argc.
 std::vector<char*> make_argv_without_quiet(int argc, char* argv[])
 {
     std::vector<char*> filtered;

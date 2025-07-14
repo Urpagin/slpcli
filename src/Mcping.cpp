@@ -5,6 +5,7 @@
 #include "Mcping.h"
 
 
+#include <netdb.h>
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +33,12 @@
 
 // Constructor definition
 Mcping::Mcping(std::string server_addr, uint16_t server_port)
-    : server_addr(std::move(server_addr)), server_port(server_port) {}
+    : server_addr(std::move(server_addr)), server_port(server_port), ip(resolve_address(this->server_addr)) {
+  if (this->ip.empty()) {
+    std::cerr << "Error: address failed to resolve" << std::endl;
+    exit(1);
+  }
+}
 
 int unpack_varint(int sock, uint64_t *out) {
   uint64_t result = 0;
@@ -85,6 +91,40 @@ static ssize_t read_json_string(int sock, std::size_t bytes_needed,
     out.insert(out.end(), tmp.begin(), tmp.begin() + r);
   }
   return static_cast<ssize_t>(out.size());
+}
+
+
+/// Returns a resolved IPv4 from domain, and empty string if error.
+std::string Mcping::resolve_address(const std::string &address) {
+  struct addrinfo hints, *res, *p;
+  int status;
+  char ipStr[INET_ADDRSTRLEN];
+
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_INET;  // AF_INET for IPv4
+  hints.ai_socktype = SOCK_STREAM;
+
+  std::cout << "Trying to resolve address: " << address << std::endl;
+  if ((status = getaddrinfo(address.c_str(), nullptr, &hints, &res)) != 0) {
+    std::cerr << "Error: getaddrinfo: " << gai_strerror(status) << std::endl;
+    return "";
+  }
+
+  for (p = res; p != nullptr; p = p->ai_next) {
+    void *addr;
+    // get the pointer to the address itself,
+    // different fields in IPv4 and IPv6:
+    struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
+    addr = &(ipv4->sin_addr);
+
+    // convert the IP to a string and print it:
+    inet_ntop(p->ai_family, addr, ipStr, sizeof ipStr);
+    break;  // if we just want the first IP
+  }
+
+  freeaddrinfo(res);  // free the linked listj
+
+  return std::string(ipStr);
 }
 
 std::string Mcping::query_slp() {
@@ -190,7 +230,7 @@ std::string Mcping::query_slp() {
   serv_addr.sin_port = htons(this->server_port);
 
   // Convert IPv4 and IPv6 addresses from text to binary
-  if (inet_pton(AF_INET, this->server_addr.c_str(), &serv_addr.sin_addr) <= 0) {
+  if (inet_pton(AF_INET, this->ip.c_str(), &serv_addr.sin_addr) <= 0) {
     std::cerr << "Error: invalid address or unsupported address." << std::endl;
     exit(1);
   }
