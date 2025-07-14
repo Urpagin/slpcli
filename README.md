@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> I've made a major breakthrough just now! To fix the infamous `mc.hypixel.net` not working bug! Dear reader, let me a few hours and I shall come back with a program that's actually useful!!!!
+
 # slpcli
 
 A simple C++ tool to query the SLP (Status List Ping) of a Minecraft Notchian (Java Edition) server.
