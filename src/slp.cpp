@@ -43,8 +43,8 @@ slp::slp(const std::string_view server_addr, const uint16_t server_port, const i
 
 
 
-/// Takes Protocol Version (int -> VarInt)
-std::vector<uint8_t> slp::make_handshake_packet(const int protocol_version_num = -1) {
+/// @brief Builds the Handshake packet.
+std::vector<uint8_t> slp::make_handshake_packet(const int protocol_version_num = -1) const  {
   // https://minecraft.wiki/w/Java_Edition_protocol/Packets#Without_compression
   // [Uncompressed Packet Format]:
   // VarInt: Length of packet_id and data
@@ -95,35 +95,48 @@ std::vector<uint8_t> slp::make_handshake_packet(const int protocol_version_num =
   packet.append_range(server_port);
   packet.append_range(next_state);
 
-
   return packet;
 }
-std::vector<uint8_t> slp::make_status_request_packet() {}
-/// Takes sock (int)
-std::vector<uint8_t> slp::read_status_response_packet(int sock) {}
+
+/// @brief Builds the Status Request packet.
+std::array<uint8_t, slp::STATUS_REQUEST_SIZE> slp::make_status_request_packet() {
+  return std::array<uint8_t, STATUS_REQUEST_SIZE> {1, 1};
+}
+
+/// @brief Reads the socket, parses and returns the Status Response packet's bytes.
+std::vector<uint8_t> slp::read_status_response_packet(int sock) const {
+
+}
 
 
-int unpack_varint(int sock, uint64_t *out) {
+/// @brief Tries to read the first VarInt from `sock`.
+/// @returns The first VarInt from `sock`.
+/// @param sock The socket fd.
+/// @param valread The bytes read. -1 for errors, 0 for EOF.
+int read_varint(const int sock, int *valread) {
+  static constexpr uint8_t DATA_BITS{0x7F};
+  static constexpr uint8_t CONTINUATION_BIT{0x80};
   uint64_t result = 0;
   uint8_t byte = 0;
   int bytes_read = 0;
 
-  for (int i = 0; i < 5; ++i) {
-    ssize_t r = read(sock, &byte, 1);
-
-    if (r <= 0) return -1;  // error or EOF
-
-    // byte & 0x7F is the actual data bits, without the continuation bit
-    result |= (byte & 0x7F) << (7 * i);
-    bytes_read++;
+  for (size_t i{0}; i < 5; ++i) {
+    if (const ssize_t r = read(sock, &byte, 1) <= 0) {
+      return static_cast<int>(r);
+    }
 
     // If the continuation bit on the byte is 0, we return.
-    if (!(byte & 0x80)) {
-      *out = result;
-      return bytes_read;
+    if (!(byte & CONTINUATION_BIT)) {
+      *valread = bytes_read;
+      return static_cast<int>(result);
     }
+
+    // Add the data bits to result.
+    result |= (byte & DATA_BITS) << (7 * i);
+    ++bytes_read;
   }
 
+  return;
   return -1;  // Too many bytes, malformed VarInt
 }
 
@@ -325,7 +338,7 @@ std::string slp::query_slp() {
 
   // Read packet length (VarInt)
   uint64_t srv_p_len;
-  if (unpack_varint(sock, &srv_p_len) < 1) {
+  if (read_varint(sock, &srv_p_len) < 1) {
     std::cerr << "Error: failed to read the Status Response length" << std::endl;
     exit(1);
   }
@@ -342,7 +355,7 @@ std::string slp::query_slp() {
   }
 
   uint64_t srv_str_len;
-  if (unpack_varint(sock, &srv_str_len) < 1) {
+  if (read_varint(sock, &srv_str_len) < 1) {
     std::cerr << "Error: failed reading the Status Response string length" << std::endl;
     exit(1);
   }

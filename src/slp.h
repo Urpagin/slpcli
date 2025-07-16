@@ -21,14 +21,17 @@ private:
   std::string ip; // Will tried to be resolved in constructor.
   int timeout;
 
+  /// Packet size + PacketID(0x00) + No data
+  static constexpr size_t STATUS_REQUEST_SIZE{2};
+
   /// Resolves a domain name to an IPv4. E.g., google.com -> 83.19.138.40
   std::string resolve_address(std::string_view address);
 
   /// Takes Protocol Version (int -> VarInt)
-  std::vector<uint8_t> make_handshake_packet(int);
-  std::vector<uint8_t> make_status_request_packet();
+  [[nodiscard]] std::vector<uint8_t> make_handshake_packet(int) const;
+  [[nodiscard]] static std::array<uint8_t, STATUS_REQUEST_SIZE> make_status_request_packet() ;
   /// Takes sock (int)
-  std::vector<uint8_t> read_status_response_packet(int);
+  [[nodiscard]] std::vector<uint8_t> read_status_response_packet(int) const;
 
 
 public:
