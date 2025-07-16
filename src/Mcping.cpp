@@ -32,8 +32,8 @@
 #include "DataTypesUtils.h"
 
 // Constructor definition
-Mcping::Mcping(std::string server_addr, uint16_t server_port)
-    : server_addr(std::move(server_addr)), server_port(server_port), ip(resolve_address(this->server_addr)) {
+Mcping::Mcping(std::string address, uint16_t port)
+    : server_addr(std::move(address)), server_port(port), ip(resolve_address(this->server_addr)) {
   if (this->ip.empty()) {
     std::cerr << "Error: address failed to resolve" << std::endl;
     exit(1);
@@ -146,20 +146,20 @@ std::string Mcping::query_slp() {
 
   // Preparing the Handshake packet
   uint8_t packet_id{0x00};  // 0x00 VarInt encoded remains 0x00.
-  uint8_t protocol_version = DataTypesUtils::pack_varint(
-      -1);  // if the client doesn't know, default to -1.
-  uint8_t server_address_length =
+  // if the client doesn't know, default to -1.
+  uint64_t protocol_version = DataTypesUtils::pack_varint(static_cast<uint32_t>(-1));
+  size_t server_address_length =
       this->server_addr
           .size();  // IPv4 address, max size is 15: (255.255.255.255)
-  uint16_t next_state =
+  uint64_t next_state =
       DataTypesUtils::pack_varint(1);  // 1 for status, 2 for login.
 
-  uint8_t packet_data_length =
-      1  // packet_id is 1 Byte
-      + DataTypesUtils::bytes_used(
-            protocol_version)  // Number of bytes used by the protocol version
-      + DataTypesUtils::bytes_used(
-            server_address_length)  // Number of bytes of the String prefix
+  size_t packet_data_length =
+      static_cast<size_t>(1)  // packet_id is 1 Byte
+      // Number of bytes used by the protocol version
+      + DataTypesUtils::bytes_used(static_cast<uint32_t>(protocol_version))
+      // Number of bytes of the String prefix
+      + DataTypesUtils::bytes_used(static_cast<uint32_t>(server_address_length))
       + server_address_length  // Number of bytes in the actual String (UTF-8)
                                // (we assume it's ASCII)
       + 2                      // port uses 2 Bytes (Unsigned Short)

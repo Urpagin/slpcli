@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 std::vector<char*> make_argv_without_quiet(int argc, char* argv[])
 {
     std::vector<char*> filtered;
-    filtered.reserve(argc);           // at most `argc` entries
+    filtered.reserve(static_cast<long unsigned int>(argc));           // at most `argc` entries
 
     filtered.push_back(argv[0]);      // keep the program name
 

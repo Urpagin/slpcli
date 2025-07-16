@@ -9,27 +9,24 @@
 #include <string>
 #include <vector>
 
+
+/// @brief Some utility functions for the Minecraft: Java Edition protocol data types such as VarInt and Strings.
 class DataTypesUtils {
- private:
+private:
   // Private constructor to prevent instantiation. It's a utility class
   DataTypesUtils() = default;
 
-  static constexpr int SEGMENT_BITS = 0x7F;  // 127 in decimal
-  static constexpr int CONTINUE_BIT = 0x80;  // 128 in decimal
+  static constexpr uint64_t DATA_BITS{0x7F}; //       0111 1111
+  static constexpr uint64_t CONTINUE_BIT{0x80}; //    1000 0000
+  static constexpr size_t MAX_VARINT_SIZE{5};
 
- public:
-  static std::vector<uint8_t> write_var_int(uint64_t value);
+public:
+  static std::vector<uint8_t> make_varint(int value);
 
-  static uint64_t pack_varint(uint32_t number);
+  static std::vector<uint8_t> make_string(std::string_view s);
 
-  static uint8_t bytes_used(uint32_t num);
-
-  static void insert_bytes_in_data(uint64_t dataByte, uint8_t **data,
-                                   uint32_t *data_offset);
-
-  static void insert_string_in_data(const std::string &ip, uint8_t **data,
-                                    uint32_t *data_offset);
+  template<std::integral T>
+  static size_t highest_byte(T value);
 };
 
-// test
 #endif  // MCPINGERCPP_DATATYPESUTILS_H
