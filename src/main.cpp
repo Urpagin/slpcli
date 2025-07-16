@@ -12,7 +12,7 @@
 
 #include <string_view>
 #include "DataTypesUtils.h"
-#include "Mcping.h"
+#include "slp.h"
 
 std::string domain_to_ipv4(const std::string &domain);
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   std::cout << "Querying '" << addr << ":" << port 
             << "'...\n\n" << std::endl;
 
-  Mcping serv(addr, port);
+  slp serv(addr, port);
 
   std::string slp_response{serv.query_slp()};
 

@@ -2,7 +2,7 @@
 // Created by Urpagin on 2023-12-01.
 //
 
-#include "Mcping.h"
+#include "slp.h"
 
 
 #include <netdb.h>
@@ -31,14 +31,77 @@
 
 #include "DataTypesUtils.h"
 
+
 // Constructor definition
-Mcping::Mcping(std::string address, uint16_t port)
-    : server_addr(std::move(address)), server_port(port), ip(resolve_address(this->server_addr)) {
+slp::slp(const std::string_view server_addr, const uint16_t server_port, const int timeout)
+    : server_addr(server_addr), server_port(server_port), ip(resolve_address(this->server_addr)), timeout(timeout) {
   if (this->ip.empty()) {
     std::cerr << "Error: address failed to resolve" << std::endl;
     exit(1);
   }
 }
+
+
+
+/// Takes Protocol Version (int -> VarInt)
+std::vector<uint8_t> slp::make_handshake_packet(const int protocol_version_num = -1) {
+  // https://minecraft.wiki/w/Java_Edition_protocol/Packets#Without_compression
+  // [Uncompressed Packet Format]:
+  // VarInt: Length of packet_id and data
+  // VarInt: packet_id
+  // ByteArray: data
+
+  // https://minecraft.wiki/w/Java_Edition_protocol/Data_types#Type:String
+  // [String Format]: UTF-8 string prefixed with its size in bytes as a VarInt.
+
+  //https://minecraft.wiki/w/Java_Edition_protocol/Server_List_Ping
+  // [Handshake Packet Format]:
+  // First, the client sends a Handshake packet with its state set to 1.
+  //
+  // Packet ID   Field Name        Field Type
+
+  // 0x00        Protocol Version  VarInt
+  //             Server Address    String
+  //             Server Port       Unsigned Short
+  //             Next State        VarInt
+
+
+  using dtu = DataTypesUtils;
+
+  const auto packet_id = dtu::make_varint(0x00);
+  const auto protocol_version = dtu::make_varint(protocol_version_num);
+  const auto server_address = dtu::make_string(this->server_addr);
+  //const uint16_t server_port = this->server_port;
+  const std::array server_port = {
+    static_cast<uint8_t>(this->server_port >> 8),   // High byte
+    static_cast<uint8_t>(this->server_port & 0xFF), // Low byte
+  };
+  const auto next_state = dtu::make_varint(1); // 1 for status, 2 for login, 3 for transfer
+
+  const size_t packet_size = packet_id.size()
+  + protocol_version.size()
+  + server_address.size()
+  + sizeof(server_port)
+  + next_state.size();
+
+  const auto packet_size_varint = dtu::make_varint(static_cast<int>(packet_size));
+
+  std::vector<uint8_t> packet;
+  packet.reserve(packet_size + packet_size_varint.size());
+
+  packet.append_range(packet_size_varint);
+  packet.append_range(packet_id);
+  packet.append_range(protocol_version);
+  packet.append_range(server_port);
+  packet.append_range(next_state);
+
+
+  return packet;
+}
+std::vector<uint8_t> slp::make_status_request_packet() {}
+/// Takes sock (int)
+std::vector<uint8_t> slp::read_status_response_packet(int sock) {}
+
 
 int unpack_varint(int sock, uint64_t *out) {
   uint64_t result = 0;
@@ -95,7 +158,7 @@ static ssize_t read_json_string(int sock, std::size_t bytes_needed,
 
 
 /// Returns a resolved IPv4 from domain, and empty string if error.
-std::string Mcping::resolve_address(const std::string &address) {
+std::string slp::resolve_address(const std::string_view address) {
   struct addrinfo hints, *res, *p;
   int status;
   char ipStr[INET_ADDRSTRLEN];
@@ -105,7 +168,7 @@ std::string Mcping::resolve_address(const std::string &address) {
   hints.ai_socktype = SOCK_STREAM;
 
   std::cout << "Trying to resolve address: " << address << std::endl;
-  if ((status = getaddrinfo(address.c_str(), nullptr, &hints, &res)) != 0) {
+  if ((status = getaddrinfo(address.data(), nullptr, &hints, &res)) != 0) {
     std::cerr << "Error: getaddrinfo: " << gai_strerror(status) << std::endl;
     return "";
   }
@@ -127,7 +190,7 @@ std::string Mcping::resolve_address(const std::string &address) {
   return std::string(ipStr);
 }
 
-std::string Mcping::query_slp() {
+std::string slp::query_slp() {
   // [Uncompressed Packet Format]:
   // VarInt: Length of packet_id and data
   // VarInt: packet_id
