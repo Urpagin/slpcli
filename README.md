@@ -1,5 +1,6 @@
 > [!IMPORTANT]
 > I've made a major breakthrough just now! To fix the infamous `mc.hypixel.net` not working bug! Dear reader, let me a few hours and I shall come back with a program that's actually useful!!!!
+> Edit: I'll have to rewrite this crap
 
 # slpcli
 
