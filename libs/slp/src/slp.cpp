@@ -23,7 +23,7 @@ slp::slp(const std::string_view server_addr, const uint16_t server_port,
 
 /// @brief Builds the Handshake packet.
 std::vector<uint8_t>
-slp::make_handshake_packet(const int protocol_version_num = -1) const {
+slp::make_handshake_packet(const int protocol_version_num = 1) const {
   // https://minecraft.wiki/w/Java_Edition_protocol/Packets#Without_compression
   // [Uncompressed Packet Format]:
   // VarInt: Length of packet_id and data
@@ -163,7 +163,7 @@ asio::ip::tcp::socket slp::get_conn_socket(asio::io_context &io_context) const {
   return std::move(socket);
 }
 
-std::string slp::query_slp() {
+std::string slp::query_slp() const {
   // 'Build Handshake' and 'Status Request' packets.
   auto handshake_packet = make_handshake_packet(-1);
   auto status_request_packet = make_status_request_packet();

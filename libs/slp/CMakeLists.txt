@@ -14,7 +14,7 @@ target_include_directories(slp
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src  # So slp.cpp can find DataTypesUtils.h
+        src  # So slp.cpp can find DataTypesUtils.h
         ${asio_SOURCE_DIR}/asio/include
 )
 

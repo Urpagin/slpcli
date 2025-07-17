@@ -5,7 +5,6 @@
 #include "DataTypesUtils.h"
 
 #include <asio.hpp>
-#include <string>
 
 /// https://minecraft.wiki/w/Java_Edition_protocol/Data_types#VarInt_and_VarLong
 /// @brief Makes a VarInt from an int.
@@ -54,7 +53,6 @@ int DataTypesUtils::read_varint(asio::ip::tcp::socket &sock) {
   // The buffer, one byte at a time.
   uint8_t byte = 0;
 
-
   for (size_t i{0}; i < 5; ++i) {
     // Throws exception if error or EOF.
     asio::read(sock, asio::buffer(&byte, 1));
@@ -70,9 +68,8 @@ int DataTypesUtils::read_varint(asio::ip::tcp::socket &sock) {
   }
 
   // Should throw if we read 5 bytes without finding the end
-  throw std::runtime_error("VarInt too large");}
-
-
+  throw std::runtime_error("VarInt too large");
+}
 
 // TODO: Remove?
 /// @brief Returns the highest byte that is non-zero. Zero counts as 1.

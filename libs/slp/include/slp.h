@@ -40,7 +40,7 @@ public:
 
   /// Queries the Minecraft notchian server using the Server List Ping protocol
   /// and returns a JSON string.
-  std::string query_slp();
+  std::string query_slp() const;
 };
 
 #endif // SLP_H
