@@ -51,8 +51,9 @@ mkdir build && cd build
 cmake ..
 ```
 
+TODO: re-write all this
 ```bash
-make -j$(nproc)
+make -j$(nproc) or cmake --build .
 ```
 
 # Compatibility
