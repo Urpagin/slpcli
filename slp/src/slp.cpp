@@ -88,9 +88,16 @@ slp::make_status_request_packet() {
 /// @returns The bytes of the JSON.
 std::string slp::read_json_status_response_packet(asio::ip::tcp::socket &sock) {
   using dtu = DataTypesUtils;
+
   int json_size{0};
 
   try {
+    // Read the packet size.
+    dtu::read_varint(sock);
+    // Read the packet ID
+    if (const int packet_id = dtu::read_varint(sock); packet_id != 0x00) {
+      throw std::runtime_error("Error: Status Response packet ID is not 0x00");
+    }
     // Read the size in bytes of the JSON from sock.
     json_size = dtu::read_varint(sock);
   } catch (const asio::system_error &e) {
