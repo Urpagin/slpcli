@@ -4,7 +4,7 @@
 
 # slpcli
 
-A simple C++ tool to query the SLP (Status List Ping) of a Minecraft Notchian (Java Edition) server.
+A simple C++ tool to query the SLP (Server List Ping) of a Minecraft Notchian (Java Edition) server.
 
 ---
 
