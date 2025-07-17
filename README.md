@@ -37,6 +37,8 @@ $ ./slpcli -q purpleprison.net | jq '.players.online'
 
 * `-q`, `--quiet`, Suppresses every diagnostic message on stdout and stderr, so the program writes only the raw JSON payload (or an empty string on error). Ideal when the command is part of a shell pipeline.
 
+## TODO: HOW TO BUILD AND USE THE SLP, TODO 2 MAKE SLP A MODULE
+
 # Building
 
 Running the `run.sh` script and pass your arguments to it, or building it manually:
@@ -60,8 +62,10 @@ make -j$(nproc)
 | OS      | Compatibility |
 |---------|---------------|
 | Linux   | YES ✅         |
-| MacOS   | MAYBE 🤔       |
-| Windows | NO ❌          |
+| MacOS   | YES ✅         |
+| Windows | YES ✅         |
+
+*(Thanks to Asio)*
 
 ## C++ Version
 
@@ -69,8 +73,13 @@ make -j$(nproc)
 
 ## Issues & Bugs
 
-* The program does not seem to work for all Minecraft servers. It does not work for `mc.hypixel.net` but does for `bmc.mineflake.net`.
-* It pends on certain servers.
+### Note on VarInts
+
+In the program, I represented VarInt values using the `int` data type.
+However, a Minecraft VarInt can be 5 bytes long, thus containing 35(5 * 7) bits of actual data.
+Since `int`s are encoded using 32 bits, my VarInts are not protocol-perfect.
+
+Even so, this is a risk I am willing to take, having to decode only a small number.
 
 # References
 

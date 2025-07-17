@@ -10,14 +10,14 @@
 #include <string>
 #include <utility>
 
-#include <string_view>
-#include "DataTypesUtils.h"
 #include "slp.h"
+#include "slp.h"
+#include <string_view>
+#include "slpcliConfig.h"
 
 std::string domain_to_ipv4(const std::string &domain);
 
 std::pair<std::string, uint16_t> read_server_address(int argc, char *argv[]);
-
 
 /// Silences ALL writes to the stdout and stderr streams.
 void silence_stdout_stderr() {
@@ -27,29 +27,32 @@ void silence_stdout_stderr() {
 
 /// Unsilences ALL writes to the stdout and stderr streams.
 void unsilence_stdout_stderr() {
-    std::cout.clear(std::cout.rdstate() & ~std::ios::failbit);
-    std::cerr.clear(std::cerr.rdstate() & ~std::ios::failbit);
+  std::cout.clear(std::cout.rdstate() & ~std::ios::failbit);
+  std::cerr.clear(std::cerr.rdstate() & ~std::ios::failbit);
 }
 
 /// Returns true if the program's been called with the --quiet|-q flag.
-bool is_quiet(int argc, char* argv[]) {
-    for (int i{1}; i < argc; ++i) {
-        std::string_view arg{argv[i]};
-        if (arg == "-q" || arg == "--quiet") return true;
-    }
-    return false;
+bool is_quiet(int argc, char *argv[]) {
+  for (int i{1}; i < argc; ++i) {
+    std::string_view arg{argv[i]};
+    if (arg == "-q" || arg == "--quiet")
+      return true;
+  }
+  return false;
 }
 
-
 int main(int argc, char *argv[]) {
-  if (is_quiet(argc, argv)) silence_stdout_stderr();
+  // Debug - TO DELETE.
+  std::cout << "Version: " << SLPCLI_VERSION_MAJOR << "." << SLPCLI_VERSION_MINOR << "." << std::endl;
 
-  std::pair<std::string, uint16_t> address = read_server_address(argc, argv);
+  if (is_quiet(argc, argv))
+    silence_stdout_stderr();
+
+
   const std::string addr = address.first;
   const uint16_t port = address.second;
 
-  std::cout << "Querying '" << addr << ":" << port 
-            << "'...\n\n" << std::endl;
+  std::cout << "Querying '" << addr << ":" << port << "'...\n\n" << std::endl;
 
   slp serv(addr, port);
 
@@ -61,34 +64,30 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-
-
-
 // `argc`,`argv` come from `main(int argc, char* argv[])`
 // Removes the -q|--quiet argument from argv argc.
-std::vector<char*> make_argv_without_quiet(int argc, char* argv[])
-{
-    std::vector<char*> filtered;
-    filtered.reserve(static_cast<long unsigned int>(argc));           // at most `argc` entries
+std::vector<char *> make_argv_without_quiet(int argc, char *argv[]) {
+  std::vector<char *> filtered;
+  filtered.reserve(
+      static_cast<long unsigned int>(argc)); // at most `argc` entries
 
-    filtered.push_back(argv[0]);      // keep the program name
+  filtered.push_back(argv[0]); // keep the program name
 
-    for (int i = 1; i < argc; ++i)
-    {
-        std::string_view a{argv[i]};
-        if (a == "-q" || a == "--quiet")   // skip the “quiet” flags
-            continue;
-        filtered.push_back(argv[i]);
-    }
+  for (int i = 1; i < argc; ++i) {
+    std::string_view a{argv[i]};
+    if (a == "-q" || a == "--quiet") // skip the “quiet” flags
+      continue;
+    filtered.push_back(argv[i]);
+  }
 
-    filtered.push_back(nullptr);      // for Unix-style `argv` termination
-    return filtered;                  // `filtered.size()-1` is the new argc
+  filtered.push_back(nullptr); // for Unix-style `argv` termination
+  return filtered;             // `filtered.size()-1` is the new argc
 }
 
 std::pair<std::string, uint16_t> read_server_address(int argc_, char *argv_[]) {
   auto new_argv_vec = make_argv_without_quiet(argc_, argv_);
-  int  argc     = static_cast<int>(new_argv_vec.size()) - 1;
-  char** argv   = new_argv_vec.data();
+  int argc = static_cast<int>(new_argv_vec.size()) - 1;
+  char **argv = new_argv_vec.data();
 
   std::string usage_str = std::format(
       "Error: incorrect usage.\n\nUsages:\n\t{} "
@@ -106,8 +105,6 @@ std::pair<std::string, uint16_t> read_server_address(int argc_, char *argv_[]) {
   // Default port
   uint16_t port{25565};
 
-
-
   try {
     if (argc < 3) {
       // We assume: ./program ip:port
@@ -117,9 +114,11 @@ std::pair<std::string, uint16_t> read_server_address(int argc_, char *argv_[]) {
       std::string port_s = arg1.substr(arg1.find(DELIMITER) + 1, arg1.size());
 
       // If "./program addr" with no port whatsoever.
-      if (port_s == addr) port_s.clear();
+      if (port_s == addr)
+        port_s.clear();
 
-      if (port_s.size()) port = static_cast<uint16_t>(std::stoi(port_s));
+      if (port_s.size())
+        port = static_cast<uint16_t>(std::stoi(port_s));
       return std::make_pair(addr, port);
 
     } else {
