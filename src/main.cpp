@@ -4,16 +4,14 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <format>
 #include <iostream>
 #include <string>
 #include <utility>
 
 #include "slp.h"
-#include "slp.h"
-#include <string_view>
 #include "slpcliConfig.h"
+#include <string_view>
 
 std::string domain_to_ipv4(const std::string &domain);
 
@@ -43,12 +41,13 @@ bool is_quiet(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
   // Debug - TO DELETE.
-  std::cout << "Version: " << SLPCLI_VERSION_MAJOR << "." << SLPCLI_VERSION_MINOR << "." << std::endl;
+  std::cout << "Version: " << SLPCLI_VERSION_MAJOR << "."
+            << SLPCLI_VERSION_MINOR << "." << std::endl;
 
   if (is_quiet(argc, argv))
     silence_stdout_stderr();
 
-
+  std::pair<std::string, uint16_t> address = read_server_address(argc, argv);
   const std::string addr = address.first;
   const uint16_t port = address.second;
 
@@ -56,10 +55,11 @@ int main(int argc, char *argv[]) {
 
   slp serv(addr, port);
 
-  std::string slp_response{serv.query_slp()};
+  const std::string slp_response{serv.query_slp()};
 
   unsilence_stdout_stderr();
-  std::cout << slp_response << std::endl;
+  std::cout << "SLP Response: '" << slp_response << "'" << std::endl;
+  //std::cout << slp_response << std::endl;
 
   return 0;
 }

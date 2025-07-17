@@ -29,12 +29,11 @@ std::vector<uint8_t> DataTypesUtils::make_varint(const int value) {
 /// @brief Makes an MC Protocol String.
 /// @details Format: [VarInt of the size in bytes of the string, string bytes]
 std::vector<uint8_t> DataTypesUtils::make_string(const std::string_view s) {
-  const auto str = std::string(s);
-  const auto varint = DataTypesUtils::make_varint(static_cast<int>(str.size()));
+  const auto varint = DataTypesUtils::make_varint(static_cast<int>(s.size()));
   std::vector<uint8_t> data;
-  data.reserve(varint.size() + str.size());
+  data.reserve(varint.size() + s.size());
   data.insert(data.end(), varint.begin(), varint.end());
-  data.insert(data.end(), str.begin(), str.end());
+  data.insert(data.end(), s.begin(), s.end());
   return data;
 }
 
@@ -55,6 +54,7 @@ int DataTypesUtils::read_varint(asio::ip::tcp::socket &sock) {
   // The buffer, one byte at a time.
   uint8_t byte = 0;
 
+
   for (size_t i{0}; i < 5; ++i) {
     // Throws exception if error or EOF.
     asio::read(sock, asio::buffer(&byte, 1));
@@ -69,10 +69,8 @@ int DataTypesUtils::read_varint(asio::ip::tcp::socket &sock) {
     }
   }
 
-  // The 5 bytes have continuation bits set to 1: error.
-  throw std::runtime_error("Status Request packet's JSON size's bytes have all "
-                           "their continuation bit set to 1. Invalid VarInt.");
-}
+  // Should throw if we read 5 bytes without finding the end
+  throw std::runtime_error("VarInt too large");}
 
 
 

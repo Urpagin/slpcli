@@ -4,25 +4,12 @@
 
 #include "../include/slp.h"
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
 
 #include <algorithm>
 #include <array>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <iomanip>
-#include <ios>
+
 #include <iostream>
 #include <ostream>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,13 +19,7 @@
 // Constructor definition
 slp::slp(const std::string_view server_addr, const uint16_t server_port,
          const int timeout)
-    : server_addr(server_addr), server_port(server_port),
-      ip(resolve_address(this->server_addr)), timeout(timeout) {
-  if (this->ip.empty()) {
-    std::cerr << "Error: address failed to resolve" << std::endl;
-    exit(1);
-  }
-}
+    : server_addr(server_addr), server_port(server_port), timeout(timeout) {}
 
 /// @brief Builds the Handshake packet.
 std::vector<uint8_t>
@@ -77,7 +58,7 @@ slp::make_handshake_packet(const int protocol_version_num = -1) const {
       dtu::make_varint(1); // 1 for status, 2 for login, 3 for transfer
 
   const size_t packet_size = packet_id.size() + protocol_version.size() +
-                             server_address.size() + sizeof(server_port) +
+                             server_address.size() + server_port.size() +
                              next_state.size();
 
   const auto packet_size_varint =
@@ -89,6 +70,7 @@ slp::make_handshake_packet(const int protocol_version_num = -1) const {
   packet.append_range(packet_size_varint);
   packet.append_range(packet_id);
   packet.append_range(protocol_version);
+  packet.append_range(server_address);
   packet.append_range(server_port);
   packet.append_range(next_state);
 
@@ -98,14 +80,13 @@ slp::make_handshake_packet(const int protocol_version_num = -1) const {
 /// @brief Builds the Status Request packet.
 std::array<uint8_t, slp::STATUS_REQUEST_SIZE>
 slp::make_status_request_packet() {
-  return std::array<uint8_t, STATUS_REQUEST_SIZE>{1, 1};
+  return std::array<uint8_t, STATUS_REQUEST_SIZE>{1, 0};
 }
 
 /// @brief Read the socket for the Status Response packet and returns the bytes
 /// of its JSON string.
 /// @returns The bytes of the JSON.
-std::string
-slp::read_json_status_response_packet(asio::ip::tcp::socket &sock) {
+std::string slp::read_json_status_response_packet(asio::ip::tcp::socket &sock) {
   using dtu = DataTypesUtils;
   int json_size{0};
 
@@ -129,13 +110,12 @@ slp::read_json_status_response_packet(asio::ip::tcp::socket &sock) {
                              "size: JSON size is 0 or less");
   }
 
-  //std::vector<uint8_t> buffer(json_size);
-  std::string buffer;
-  buffer.reserve(json_size);
+  // std::vector<uint8_t> buffer(json_size);
+  std::string buffer(json_size, '\0');
 
   try {
     // Read the JSON string into memory.
-    asio::read(sock, asio::buffer(buffer, json_size));
+    asio::read(sock, asio::buffer(buffer.data(), json_size));
   } catch (const asio::system_error &e) {
     if (e.code() == asio::error::eof) {
       std::cerr << "Error: failed to read Status Response packet JSON: EOF"
@@ -147,6 +127,8 @@ slp::read_json_status_response_packet(asio::ip::tcp::socket &sock) {
     throw std::runtime_error(
         "Failed to read the Status Response packet JSON size");
   }
+  std::cout << "size json: " << buffer.size() << std::endl;
+  std::cout << "size json_size: " << json_size << std::endl;
 
   return buffer;
 }
@@ -162,6 +144,14 @@ asio::ip::tcp::socket slp::get_conn_socket(asio::io_context &io_context) const {
   tcp::socket socket(io_context);
   asio::connect(socket, resolver.resolve(this->server_addr,
                                          std::to_string(this->server_port)));
+
+  // TODO: Set timeout
+  // TODO: Set timeout
+  // TODO: Set timeout
+  // TODO: Set timeout
+  // TODO: Set timeout
+  // TODO: Set timeout
+  // TODO: Set timeout
 
   return std::move(socket);
 }
@@ -196,7 +186,8 @@ std::string slp::query_slp() {
 //   // VarInt: packet_id
 //   // ByteArray: data
 //
-//   // [String Format]: UTF-8 string prefixed with its size in bytes as a VarInt.
+//   // [String Format]: UTF-8 string prefixed with its size in bytes as a
+//   VarInt.
 //
 //   // [Handshake Packet Format]:
 //   // VarInt: request length in bytes   (example : 1 + 1 + 9 + 2 + 1 = 14)
@@ -224,15 +215,16 @@ std::string slp::query_slp() {
 //       + DataTypesUtils::bytes_used(static_cast<uint32_t>(protocol_version))
 //       // Number of bytes of the String prefix
 //       +
-//       DataTypesUtils::bytes_used(static_cast<uint32_t>(server_address_length)) +
-//       server_address_length // Number of bytes in the actual String (UTF-8)
+//       DataTypesUtils::bytes_used(static_cast<uint32_t>(server_address_length))
+//       + server_address_length // Number of bytes in the actual String (UTF-8)
 //                             // (we assume it's ASCII)
 //       + 2                   // port uses 2 Bytes (Unsigned Short)
 //       + 1;                  // next_state is either 1 or 2, so uses 1 Byte
 //
 //   // Total packet size. (remember that Packet: (VarInt)packet_length + data)
 //   uint8_t packet_length = DataTypesUtils::bytes_used(
-//                               DataTypesUtils::pack_varint(packet_data_length)) +
+//                               DataTypesUtils::pack_varint(packet_data_length))
+//                               +
 //                           packet_data_length;
 //   // std::cout << "Total packet length: " << (int)packet_length << std::endl;
 //
@@ -242,7 +234,8 @@ std::string slp::query_slp() {
 //   uint32_t data_offset_ptr{0};
 //
 //   DataTypesUtils::insert_bytes_in_data(
-//       DataTypesUtils::pack_varint(packet_data_length), &data, &data_offset_ptr);
+//       DataTypesUtils::pack_varint(packet_data_length), &data,
+//       &data_offset_ptr);
 //   DataTypesUtils::insert_bytes_in_data(packet_id, &data, &data_offset_ptr);
 //   DataTypesUtils::insert_bytes_in_data(protocol_version, &data,
 //                                        &data_offset_ptr);
@@ -258,7 +251,8 @@ std::string slp::query_slp() {
 //                                        &data_offset_ptr);
 //   DataTypesUtils::insert_bytes_in_data(
 //       next_state, &data,
-//       &data_offset_ptr); // VarInt encodedNumbers under 127 included remain the
+//       &data_offset_ptr); // VarInt encodedNumbers under 127 included remain
+//       the
 //                          // same.
 //
 //   // -------- Networking --------
@@ -278,14 +272,16 @@ std::string slp::query_slp() {
 //   tv.tv_sec = 3;  // seconds
 //   tv.tv_usec = 0; // microseconds
 //   if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-//     std::cerr << "Error: fiailed to set socket option: setsockopt(SO_RCVTIMEO)."
+//     std::cerr << "Error: fiailed to set socket option:
+//     setsockopt(SO_RCVTIMEO)."
 //               << std::endl;
 //     exit(1);
 //   }
 //
 //   /* ---------- X-second timeout on send() ---------- */
 //   if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
-//     std::cerr << "Error: fiailed to set socket option: setsockopt(SO_SNDTIMEO)."
+//     std::cerr << "Error: fiailed to set socket option:
+//     setsockopt(SO_SNDTIMEO)."
 //               << std::endl;
 //     exit(1);
 //   }
@@ -295,8 +291,8 @@ std::string slp::query_slp() {
 //
 //   // Convert IPv4 and IPv6 addresses from text to binary
 //   if (inet_pton(AF_INET, this->ip.c_str(), &serv_addr.sin_addr) <= 0) {
-//     std::cerr << "Error: invalid address or unsupported address." << std::endl;
-//     exit(1);
+//     std::cerr << "Error: invalid address or unsupported address." <<
+//     std::endl; exit(1);
 //   }
 //
 //   if ((client_fd = connect(sock, (struct sockaddr *)&serv_addr,
@@ -355,7 +351,8 @@ std::string slp::query_slp() {
 //   }
 //
 //   if (srv_str_len >= srv_p_len) {
-//     std::cerr << "Error: Status Response string length is greater than itself; "
+//     std::cerr << "Error: Status Response string length is greater than
+//     itself; "
 //                  "nonsense."
 //               << std::endl;
 //     exit(1);
