@@ -178,9 +178,13 @@ VarInt values in this implementation are stored as `int` (32 bits). However, Min
 
 ---
 
-## References
+## References & Acknowledgments
 
+* [Minecraft: Java Edition protocol wiki](https://minecraft.wiki/w/Java_Edition_protocol/)
 * [Server List Ping Protocol](https://minecraft.wiki/w/Java_Edition_protocol/Server_List_Ping)
 * [Packet Format](https://minecraft.wiki/w/Java_Edition_protocol/Packets)
 * [String Format](https://minecraft.wiki/w/Java_Edition_protocol/Data_types#Type:String)
 * [VarInt Logic](https://minecraft.wiki/w/Java_Edition_protocol/Packets#VarInt_and_VarLong)
+
+* [The ASIO library for socket programming](https://think-async.com/Asio/)
+* [The CLI11 library for command-line interface parsing](https://github.com/CLIUtils/CLI11)
