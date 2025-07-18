@@ -38,6 +38,12 @@ Specifying a port:
 ./slpcli 23.230.3.162:25572
 ```
 
+Specifying a port (option 2):
+
+```bash
+./slpcli 23.230.3.162 25572
+```
+
 ### Extracting Data with jq
 
 Display the number of online players using [`jq`](https://jqlang.org/):
