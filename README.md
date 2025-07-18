@@ -1,171 +1,186 @@
 # slpcli
 
-A simple C++ tool to query the SLP (Server List Ping) of a Minecraft: Java Edition (Notchian) server.
+**A simple C++ tool to query the Server List Ping (SLP) of a Minecraft: Java Edition (Notchian) server.**
 
 ---
 
-<small>A naive implementation of the SLP (Server List Ping) protocol in C++ using [non-boost Asio](https://think-async.com/Asio/).</small>
+*A naive implementation of the Server List Ping (SLP) protocol in C++ using [non-boost Asio](https://think-async.com/Asio/).*
 
-# Usage
+## Usage
 
 ```bash
 ./slpcli [OPTIONS] addr [port]
 
-
-POSITIONALS:
-  addr TEXT REQUIRED          Server address with optional ":port". 
-  port UINT                   Port of the Minecraft server (default 25565). 
+POSITIONAL ARGUMENTS:
+  addr TEXT REQUIRED          Server address (optional format "address:port").
+  port UINT                   Server port (default is 25565).
 
 OPTIONS:
-  -h,     --help              Print this help message and exit 
-  -q,     --quiet             Only prints the JSON or an empty string if error. 
-  -a,     --address TEXT REQUIRED 
-                              Server address with optional ":port". 
-  -p,     --port UINT         Port of the Minecraft server (default 25565). 
- 
-
+  -h, --help                  Display help message and exit.
+  -q, --quiet                 Print only JSON response or an empty string if an error occurs.
+  -a, --address TEXT REQUIRED Server address (optional format "address:port").
+  -p, --port UINT             Server port (default is 25565).
 ```
 
 ## Examples
 
-No port:
+### Basic Usage
+
+Without specifying a port (default port 25565):
 
 ```bash
 ./slpcli mc.hypixel.net
 ```
 
-With port:
+Specifying a port:
 
 ```bash
 ./slpcli 23.230.3.162:25572
 ```
 
-Output of CLI usage with <a href="https://jqlang.org/" target="_blank" rel="noopener noreferrer">jq</a> to print out the
-online players:
+### Extracting Data with jq
+
+Display the number of online players using [`jq`](https://jqlang.org/):
 
 ```bash
-$ ./slpcli -q purpleprison.net | jq '.players.online'
-438
+./slpcli -q purpleprison.net | jq '.players.online'
+# Output: 438
 ```
 
-Output of CLI usage with chained bash commands to show the favicon of Hypixel with feh:
-You can also play with Unix commands. Here is the command to show the icon of Hypixel with [feh](https://github.com/derf/feh):
+### Displaying Server Favicon
+
+Use chained bash commands with [`feh`](https://github.com/derf/feh) to display the server favicon:
+
 ```bash
 ./slpcli mc.hypixel.net -q | jq .favicon -r | cut -d, -f2 | base64 -d | feh -
 ```
-Or to save it as an image file:
+
+Save favicon as an image file:
+
 ```bash
 ./slpcli mc.hypixel.net -q | jq .favicon -r | cut -d, -f2 | base64 -d > favicon.png
 ```
 
-## Options
+## Quiet Mode
 
-* `-q`, `--quiet`, Suppresses every diagnostic message on stdout and stderr, so the program writes only the raw JSON
-  payload (or an empty string on error). Ideal when the command is part of a shell pipeline.
+The `-q` or `--quiet` option suppresses diagnostic messages on stdout and stderr, outputting only the raw JSON payload or an empty string upon error. Useful for shell pipelines.
 
-## Using the Server List Ping code in your C++ project
+---
 
-From this base project:
+## Building
+
+You can use the provided `run_debug.sh` script or build manually:
+
+### Manual Build
+
+```bash
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+```
+
+*(To be improved later.)*
+
+---
+
+## Compatibility
+
+### Platforms
+
+| OS      | Compatibility |
+| ------- | ------------- |
+| Linux   | ✅ YES         |
+| macOS   | ✅ YES         |
+| Windows | ✅ YES         |
+
+*Note*: Manual build required for non-Linux/macOS platforms (enabled by Asio).
+
+### C++ Version
+
+* Requires C++23 or newer.
+
+---
+
+## Integrating SLP Code in Your C++ Project
+
+Starting from a basic project structure:
+
+**main.cpp**
 
 ```cpp
-$ cat main.cpp
 int main() {
     return 0;
 }
 ```
+
+**CMakeLists.txt**
+
 ```cmake
-$ cat CMakeLists.txt
 cmake_minimum_required(VERSION 3.24)
 project(myapp)
 
 add_executable(myapp main.cpp)
 ```
 
-1. Clone the repositoty
+### Steps
+
+1. Clone the repository:
+
 ```bash
 git clone https://github.com/Urpagin/slpcli.git
 ```
-2. Update link the lib to your project in `CMakeLists.txt`
-```bash
+
+2. Link the library in your project's `CMakeLists.txt`:
+
+```cmake
 cmake_minimum_required(VERSION 3.24)
 project(myapp)
 
-# Add this
+# Include SLP library
 add_subdirectory(slpcli/libs/slp)
 
 add_executable(myapp main.cpp)
 
-# And this
+# Link SLP library
 target_link_libraries(myapp PRIVATE slp)
 ```
-3. Use the lib in your project
+
+3. Use the library in your project:
+
 ```cpp
 #include <iostream>
 #include "slp.h"
 
 int main() {
     auto ping = slp("mc.hypixel.net");
-    auto resp = ping.query_slp();
-    std::cout << resp << std::endl;
+    auto response = ping.query_slp();
+    std::cout << response << std::endl;
     return 0;
 }
 ```
-4. Build
-```bash
-mkdir -p build && cd build && cmake .. && make -j$(nproc) && ./myapp
-```
 
-# Building
-
-Running the `run_debug.sh` script and pass your arguments to it, or building it manually:
+4. Build and run:
 
 ```bash
-mkdir build && cd build
-```
-
-```bash
+mkdir -p build && cd build
 cmake ..
+make -j$(nproc)
+./myapp
 ```
 
-TODO: re-write all this
+---
 
-```bash
-make -j$(nproc) or cmake --build .
-```
+## Known Issues
 
-# Compatibility
+### VarInt Handling
 
-## Platforms
+VarInt values in this implementation are stored as `int` (32 bits). However, Minecraft VarInts may reach up to 5 bytes (35 bits). Thus, this implementation does not fully comply with the protocol for very large VarInts. This limitation is intentional and acceptable for typical usage scenarios.
 
-| OS      | Compatibility |
-|---------|---------------|
-| Linux   | YES ✅         |
-| MacOS   | YES ✅         |
-| Windows | YES ✅         |
+---
 
-*(Thanks to Asio)*
+## References
 
-## C++ Version
-
-* C++20 and above.
-
-## Issues & Bugs
-
-### Note on VarInts
-
-In the program, I represented VarInt values using the `int` data type.
-However, a Minecraft VarInt can be 5 bytes long, thus containing 35(5 * 7) bits of actual data.
-Since `int`s are encoded using 32 bits, my VarInts are not protocol-perfect.
-
-Even so, this is a risk I am willing to take, having to decode only a small number.
-
-# References
-
-* <a href="https://minecraft.wiki/w/Java_Edition_protocol/Server_List_Ping" target="_blank" rel="noopener noreferrer">
-  SLP Docs</a>
-* <a href="https://minecraft.wiki/w/Java_Edition_protocol/Packets" target="_blank" rel="noopener noreferrer">Packet
-  Format</a>
-* <a href="https://minecraft.wiki/w/Java_Edition_protocol/Data_types#Type:String" target="_blank" rel="noopener noreferrer">
-  String Format</a>
-* <a href="https://minecraft.wiki/w/Java_Edition_protocol/Packets#VarInt_and_VarLong" target="_blank" rel="noopener noreferrer">
-  VarInt Logic</a>
+* [Server List Ping Protocol](https://minecraft.wiki/w/Java_Edition_protocol/Server_List_Ping)
+* [Packet Format](https://minecraft.wiki/w/Java_Edition_protocol/Packets)
+* [String Format](https://minecraft.wiki/w/Java_Edition_protocol/Data_types#Type:String)
+* [VarInt Logic](https://minecraft.wiki/w/Java_Edition_protocol/Packets#VarInt_and_VarLong)
