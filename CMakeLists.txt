@@ -8,9 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # source.
 configure_file(slpcliConfig.h.in slpcliConfig.h)
 
-add_subdirectory(slp)
+add_subdirectory(libs/slp)
+add_subdirectory(libs/CLI11)
 
 add_executable(slpcli src/main.cpp)
 
-target_link_libraries(slpcli PRIVATE slp)
+
+target_link_libraries(slpcli PRIVATE slp PRIVATE CLI11)
 target_include_directories(slpcli PUBLIC "${PROJECT_BINARY_DIR}")

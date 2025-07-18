@@ -134,9 +134,6 @@ std::string slp::read_json_status_response_packet(asio::ip::tcp::socket &sock) {
     throw std::runtime_error(
         "Failed to read the Status Response packet JSON size");
   }
-  std::cout << "size json: " << buffer.size() << std::endl;
-  std::cout << "size json_size: " << json_size << std::endl;
-
   return buffer;
 }
 
@@ -163,6 +160,10 @@ asio::ip::tcp::socket slp::get_conn_socket(asio::io_context &io_context) const {
   return std::move(socket);
 }
 
+/// @brief Queries the Minecraft server using the Status List Ping protocol and
+/// returns the JSON response.
+/// @returns The JSON string of the Status Response packet.
+/// @throws asio::system_error For any errors encountered.
 std::string slp::query_slp() const {
   // 'Build Handshake' and 'Status Request' packets.
   auto handshake_packet = make_handshake_packet(-1);
@@ -186,195 +187,3 @@ std::string slp::query_slp() const {
     throw;
   }
 }
-
-// std::string slp::query_slp() {
-//   // [Uncompressed Packet Format]:
-//   // VarInt: Length of packet_id and data
-//   // VarInt: packet_id
-//   // ByteArray: data
-//
-//   // [String Format]: UTF-8 string prefixed with its size in bytes as a
-//   VarInt.
-//
-//   // [Handshake Packet Format]:
-//   // VarInt: request length in bytes   (example : 1 + 1 + 9 + 2 + 1 = 14)
-//   // VarInt: packetID                  (example : 0)
-//   // VarInt: protocol version          (example : pack_varint(760))
-//   // VarInt: server address length     (example : 9)
-//   // String: server address            (example : "127.0.0.1")
-//   // uint16_t: server port             (example : 25565)
-//   // VarInt: next state                (example : 0)
-//
-//   // Preparing the Handshake packet
-//   uint8_t packet_id{0x00}; // 0x00 VarInt encoded remains 0x00.
-//   // if the client doesn't know, default to -1.
-//   uint64_t protocol_version =
-//       DataTypesUtils::pack_varint(static_cast<uint32_t>(-1));
-//   size_t server_address_length =
-//       this->server_addr
-//           .size(); // IPv4 address, max size is 15: (255.255.255.255)
-//   uint64_t next_state =
-//       DataTypesUtils::pack_varint(1); // 1 for status, 2 for login.
-//
-//   size_t packet_data_length =
-//       static_cast<size_t>(1) // packet_id is 1 Byte
-//       // Number of bytes used by the protocol version
-//       + DataTypesUtils::bytes_used(static_cast<uint32_t>(protocol_version))
-//       // Number of bytes of the String prefix
-//       +
-//       DataTypesUtils::bytes_used(static_cast<uint32_t>(server_address_length))
-//       + server_address_length // Number of bytes in the actual String (UTF-8)
-//                             // (we assume it's ASCII)
-//       + 2                   // port uses 2 Bytes (Unsigned Short)
-//       + 1;                  // next_state is either 1 or 2, so uses 1 Byte
-//
-//   // Total packet size. (remember that Packet: (VarInt)packet_length + data)
-//   uint8_t packet_length = DataTypesUtils::bytes_used(
-//                               DataTypesUtils::pack_varint(packet_data_length))
-//                               +
-//                           packet_data_length;
-//   // std::cout << "Total packet length: " << (int)packet_length << std::endl;
-//
-//   // Building the Handshake packet
-//
-//   auto *data = new uint8_t[packet_length];
-//   uint32_t data_offset_ptr{0};
-//
-//   DataTypesUtils::insert_bytes_in_data(
-//       DataTypesUtils::pack_varint(packet_data_length), &data,
-//       &data_offset_ptr);
-//   DataTypesUtils::insert_bytes_in_data(packet_id, &data, &data_offset_ptr);
-//   DataTypesUtils::insert_bytes_in_data(protocol_version, &data,
-//                                        &data_offset_ptr);
-//
-//   // Server Address String
-//   DataTypesUtils::insert_bytes_in_data(
-//       DataTypesUtils::pack_varint(server_address_length), &data,
-//       &data_offset_ptr);
-//   DataTypesUtils::insert_string_in_data(this->server_addr, &data,
-//                                         &data_offset_ptr);
-//
-//   DataTypesUtils::insert_bytes_in_data(this->server_port, &data,
-//                                        &data_offset_ptr);
-//   DataTypesUtils::insert_bytes_in_data(
-//       next_state, &data,
-//       &data_offset_ptr); // VarInt encodedNumbers under 127 included remain
-//       the
-//                          // same.
-//
-//   // -------- Networking --------
-//   uint8_t status_request_packet[2] = {1, 0};
-//
-//   // Initializing socket
-//   int sock = 0, valread, client_fd;
-//   struct sockaddr_in serv_addr;
-//
-//   if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-//     std::cerr << "Error: failed to create socket." << std::endl;
-//     exit(1);
-//   }
-//
-//   /* ---------- X-second timeout on recv() / read() ---------- */
-//   struct timeval tv;
-//   tv.tv_sec = 3;  // seconds
-//   tv.tv_usec = 0; // microseconds
-//   if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-//     std::cerr << "Error: fiailed to set socket option:
-//     setsockopt(SO_RCVTIMEO)."
-//               << std::endl;
-//     exit(1);
-//   }
-//
-//   /* ---------- X-second timeout on send() ---------- */
-//   if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
-//     std::cerr << "Error: fiailed to set socket option:
-//     setsockopt(SO_SNDTIMEO)."
-//               << std::endl;
-//     exit(1);
-//   }
-//
-//   serv_addr.sin_family = AF_INET;
-//   serv_addr.sin_port = htons(this->server_port);
-//
-//   // Convert IPv4 and IPv6 addresses from text to binary
-//   if (inet_pton(AF_INET, this->ip.c_str(), &serv_addr.sin_addr) <= 0) {
-//     std::cerr << "Error: invalid address or unsupported address." <<
-//     std::endl; exit(1);
-//   }
-//
-//   if ((client_fd = connect(sock, (struct sockaddr *)&serv_addr,
-//                            sizeof(serv_addr))) < 0) {
-//     std::cerr << "Error: connection failed." << std::endl;
-//     exit(1);
-//   }
-//
-//   // --- Sending the data ---
-//   // Send the Handshake packet to the server
-//   if (send(sock, data, packet_length, 0) != packet_length) {
-//     std::cerr << "Error: failed to send the Handshake packet to the server."
-//               << std::endl;
-//     exit(1);
-//   }
-//
-//   // Deallocate the buffer. I could've used a std::array, but oh well...
-//   free(data);
-//
-//   // Sends the status request packet
-//   if (send(sock, status_request_packet, 2, 0) != 2) {
-//     std::cerr
-//         << "Error: failed to send the Status Request packet to the server."
-//         << std::endl;
-//     exit(1);
-//   }
-//
-//   // ----- READING SERVER -----
-//
-//   // Read packet length (VarInt)
-//   uint64_t srv_p_len;
-//   if (read_varint(sock, &srv_p_len) < 1) {
-//     std::cerr << "Error: failed to read the Status Response length"
-//               << std::endl;
-//     exit(1);
-//   }
-//
-//   // Read packet ID (VarInt, but 0x00 is still 0x00)
-//   uint8_t srv_p_id;
-//   if (read(sock, &srv_p_id, 1) < 1) {
-//     std::cerr << "Error: failed to read the Status Response ID" << std::endl;
-//     exit(1);
-//   }
-//   if (srv_p_id != 0) {
-//     std::cerr << std::format("Error: received Status Response packet ID is "
-//                              "incorrect; expected 0x00, got 0x{0:02X}",
-//                              srv_p_id);
-//     exit(1);
-//   }
-//
-//   uint64_t srv_str_len;
-//   if (read_varint(sock, &srv_str_len) < 1) {
-//     std::cerr << "Error: failed reading the Status Response string length"
-//               << std::endl;
-//     exit(1);
-//   }
-//
-//   if (srv_str_len >= srv_p_len) {
-//     std::cerr << "Error: Status Response string length is greater than
-//     itself; "
-//                  "nonsense."
-//               << std::endl;
-//     exit(1);
-//   }
-//
-//   // Read the JSON string.
-//   std::vector<uint8_t> json_data;
-//   json_data.reserve(srv_str_len);
-//   read_json_string(sock, (size_t)srv_str_len, json_data);
-//
-//   // Close the socket.
-//   close(client_fd);
-//
-//   // Convert bytes into String.
-//   std::string json_string(json_data.begin(), json_data.end());
-//
-//   return json_string;
-// }

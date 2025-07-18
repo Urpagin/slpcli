@@ -1,11 +1,9 @@
-#include <arpa/inet.h>
-#include <netdb.h>
-
-#include <cstdint>
+#include <CLI/CLI.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <format>
 #include <iostream>
+#include <netdb.h>
 #include <string>
 #include <utility>
 
@@ -13,124 +11,117 @@
 #include "slpcliConfig.h"
 #include <string_view>
 
-std::string domain_to_ipv4(const std::string &domain);
+void disable_output();
+void enable_output();
+std::pair<std::string, uint16_t> read_server_address(int, char *[]);
+std::string get_version();
 
-std::pair<std::string, uint16_t> read_server_address(int argc, char *argv[]);
+struct AppOptions {
+  bool is_quiet{false};
+  std::string addr;
+  uint16_t port{25565};
+};
+AppOptions parse_args(int, char **);
 
-/// Silences ALL writes to the stdout and stderr streams.
-void silence_stdout_stderr() {
-  std::cout.setstate(std::ios::failbit);
-  std::cerr.setstate(std::ios::failbit);
-}
+int main(const int argc, char *argv[]) {
+  // This syntax is so cool
+  const auto [is_quiet, addr, port] = parse_args(argc, argv);
 
-/// Unsilences ALL writes to the stdout and stderr streams.
-void unsilence_stdout_stderr() {
-  std::cout.clear(std::cout.rdstate() & ~std::ios::failbit);
-  std::cerr.clear(std::cerr.rdstate() & ~std::ios::failbit);
-}
-
-/// Returns true if the program's been called with the --quiet|-q flag.
-bool is_quiet(int argc, char *argv[]) {
-  for (int i{1}; i < argc; ++i) {
-    std::string_view arg{argv[i]};
-    if (arg == "-q" || arg == "--quiet")
-      return true;
-  }
-  return false;
-}
-
-int main(int argc, char *argv[]) {
-  // Debug - TO DELETE.
-  std::cout << "Version: " << SLPCLI_VERSION_MAJOR << "."
-            << SLPCLI_VERSION_MINOR << "." << std::endl;
-
-  if (is_quiet(argc, argv))
-    silence_stdout_stderr();
-
-  std::pair<std::string, uint16_t> address = read_server_address(argc, argv);
-  const std::string addr = address.first;
-  const uint16_t port = address.second;
+  if (is_quiet)
+    disable_output();
 
   std::cout << "Querying '" << addr << ":" << port << "'...\n\n" << std::endl;
 
-  slp serv(addr, port);
-
+  const slp serv(addr, port);
   const std::string slp_response{serv.query_slp()};
-
-  unsilence_stdout_stderr();
-  std::cout << "SLP Response: '" << slp_response << "'" << std::endl;
-  //std::cout << slp_response << std::endl;
+  //enable_output();
+  std::cout << "Hello";
+  std::cout << "''" << slp_response << "'" << std::endl;
 
   return 0;
 }
 
-// `argc`,`argv` come from `main(int argc, char* argv[])`
-// Removes the -q|--quiet argument from argv argc.
-std::vector<char *> make_argv_without_quiet(int argc, char *argv[]) {
-  std::vector<char *> filtered;
-  filtered.reserve(
-      static_cast<long unsigned int>(argc)); // at most `argc` entries
+/// @brief Split "<addr>:<port>" into {addr, optional<port>}.
+/// If the colon is missing, second element is std::nullopt.
+std::pair<std::string_view, std::optional<uint16_t>>
+split_addr(std::string_view input) {
+  const std::size_t pos = input.find(':');
+  if (pos == std::string_view::npos)
+    return {input, std::nullopt};
 
-  filtered.push_back(argv[0]); // keep the program name
+  std::string_view host = input.substr(0, pos);
+  const std::string_view port_sv = input.substr(pos + 1);
 
-  for (int i = 1; i < argc; ++i) {
-    std::string_view a{argv[i]};
-    if (a == "-q" || a == "--quiet") // skip the “quiet” flags
-      continue;
-    filtered.push_back(argv[i]);
-  }
+  if (port_sv.empty()) // “host:”
+    return {host, std::nullopt};
 
-  filtered.push_back(nullptr); // for Unix-style `argv` termination
-  return filtered;             // `filtered.size()-1` is the new argc
+  uint16_t port = static_cast<uint16_t>(std::stoi(std::string(port_sv)));
+  return {host, port};
 }
 
-std::pair<std::string, uint16_t> read_server_address(int argc_, char *argv_[]) {
-  auto new_argv_vec = make_argv_without_quiet(argc_, argv_);
-  int argc = static_cast<int>(new_argv_vec.size()) - 1;
-  char **argv = new_argv_vec.data();
+/// @brief Parses the CLI arguments.
+AppOptions parse_args(const int argc, char **argv) {
+  CLI::App app{std::format("Minecraft: Java Edition SLP CLI (version: {})",
+                           get_version())};
 
-  std::string usage_str = std::format(
-      "Error: incorrect usage.\n\nUsages:\n\t{} "
-      "<address>:<port>\n\n\tor\n\n\t{} <address> <port>\n\nInfo:\n\tDefault "
-      "port is 25565.",
-      argv[0], argv[0]);
+  AppOptions opts;
 
-  if (argc < 2) {
-    std::cerr << usage_str << std::endl;
-    std::exit(-1);
-  }
-
-  // Delimiter for case "<addr>:<port>"
-  const char *DELIMITER = ":";
-  // Default port
-  uint16_t port{25565};
+  app.add_flag("-q,--quiet", opts.is_quiet,
+               "Only prints the JSON or an empty string if error.");
+  app.add_option("-a,--address,addr", opts.addr,
+                 "Server address with optional \":port\".")
+      ->required();
+  const auto port_opt =
+      app.add_option("-p,--port,port", opts.port,
+                     "Port of the Minecraft server (default 25565).");
 
   try {
-    if (argc < 3) {
-      // We assume: ./program ip:port
-      std::string arg1 = std::string(argv[1]);
-
-      std::string addr = arg1.substr(0, arg1.find(DELIMITER));
-      std::string port_s = arg1.substr(arg1.find(DELIMITER) + 1, arg1.size());
-
-      // If "./program addr" with no port whatsoever.
-      if (port_s == addr)
-        port_s.clear();
-
-      if (port_s.size())
-        port = static_cast<uint16_t>(std::stoi(port_s));
-      return std::make_pair(addr, port);
-
-    } else {
-      // We assume: ./program ip port garbage args
-      const std::string addr{argv[1]};
-      port = static_cast<uint16_t>(std::stoi(argv[2]));
-
-      return std::make_pair(addr, port);
-    }
-  } catch (const std::exception &e) {
-    std::cerr << "Error: failed to parse input arguments.\nDetail: " << e.what()
-              << std::endl;
-    exit(1);
+    app.parse(argc, argv); // may std::exit on help/usage
+  } catch (const CLI::ParseError &e) {
+    std::exit(app.exit(e));
   }
+
+  /* ---- post‑parse reconciliation ---- */
+  auto [host, embedded_port] = split_addr(opts.addr);
+  opts.addr = host;
+
+  if (embedded_port && port_opt->count()) {
+    // throw CLI::ParseError("Port specified twice: in --address and --port.");
+    std::exit(app.exit(CLI::ValidationError(
+        "Port specified twice: in --address and --port.")));
+  }
+
+  if (embedded_port)
+    opts.port = *embedded_port;
+
+  return opts;
+}
+
+/// @brief Returns the current version of the program in format:
+/// "<MAJOR>.<MINOR>"
+std::string get_version() {
+  return std::to_string(SLPCLI_VERSION_MAJOR) + "." +
+         std::to_string(SLPCLI_VERSION_MINOR);
+}
+
+/// @brief Disables stdout and stderr.
+void disable_output() {
+#ifdef _WIN32
+  freopen("NUL", "w", stdout);
+  freopen("NUL", "w", stderr);
+#else
+  freopen("/dev/null", "w", stdout);
+  freopen("/dev/null", "w", stderr);
+#endif
+}
+
+/// @brief Enables stdout and stderr.
+void enable_output() {
+#ifdef _WIN32
+  freopen("CON", "w", stdout);
+  freopen("CON", "w", stderr);
+#else
+  freopen("/dev/tty", "w", stdout);
+  freopen("/dev/tty", "w", stderr);
+#endif
 }
