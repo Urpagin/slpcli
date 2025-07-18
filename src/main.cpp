@@ -11,6 +11,22 @@
 #include "slpcliConfig.h"
 #include <string_view>
 
+#ifdef _WIN32
+#include <io.h> // _dup, _dup2, _close
+#define dup _dup
+#define dup2 _dup2
+#define close _close
+constexpr const char *DEV_NULL = "NUL";
+#else
+#include <unistd.h> // dup, dup2, close
+constexpr const char *DEV_NULL = "/dev/null";
+#endif
+
+namespace detail {
+inline int saved_out = -1;
+inline int saved_err = -1;
+} // namespace detail
+
 void disable_output();
 void enable_output();
 std::pair<std::string, uint16_t> read_server_address(int, char *[]);
@@ -32,11 +48,17 @@ int main(const int argc, char *argv[]) {
 
   std::cout << "Querying '" << addr << ":" << port << "'...\n\n" << std::endl;
 
-  const slp serv(addr, port);
-  const std::string slp_response{serv.query_slp()};
-  //enable_output();
-  std::cout << "Hello";
-  std::cout << "''" << slp_response << "'" << std::endl;
+  try {
+    const slp serv(addr, port);
+    const std::string slp_response{serv.query_slp()};
+
+    // Print JSON
+    enable_output();
+    std::cout << slp_response << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "Error: failed to query SLP: " << e.what() << std::endl;
+    std::exit(-1);
+  }
 
   return 0;
 }
@@ -55,8 +77,12 @@ split_addr(std::string_view input) {
   if (port_sv.empty()) // “host:”
     return {host, std::nullopt};
 
-  uint16_t port = static_cast<uint16_t>(std::stoi(std::string(port_sv)));
-  return {host, port};
+  if (const int p_int = std::stoi(std::string(port_sv));
+      p_int < 0 || p_int > 1 << 16) {
+    throw std::runtime_error("Port invalid");
+  } else {
+    return {host, static_cast<uint16_t>(p_int)};
+  }
 }
 
 /// @brief Parses the CLI arguments.
@@ -82,17 +108,25 @@ AppOptions parse_args(const int argc, char **argv) {
   }
 
   /* ---- post‑parse reconciliation ---- */
-  auto [host, embedded_port] = split_addr(opts.addr);
-  opts.addr = host;
+  try {
 
-  if (embedded_port && port_opt->count()) {
-    // throw CLI::ParseError("Port specified twice: in --address and --port.");
-    std::exit(app.exit(CLI::ValidationError(
-        "Port specified twice: in --address and --port.")));
+    auto [host, embedded_port] = split_addr(opts.addr);
+    opts.addr = host;
+
+    if (embedded_port && port_opt->count()) {
+      // throw CLI::ParseError("Port specified twice: in --address and
+      // --port.");
+      std::exit(app.exit(CLI::ValidationError(
+          "Port specified twice: in --address and --port.")));
+    }
+
+    if (embedded_port)
+      opts.port = *embedded_port;
+  } catch (const std::exception &e) {
+    const auto e_msg =
+        std::format("Failed to split address and port: {}", e.what());
+    std::exit(app.exit(CLI::ValidationError(e_msg)));
   }
-
-  if (embedded_port)
-    opts.port = *embedded_port;
 
   return opts;
 }
@@ -104,24 +138,30 @@ std::string get_version() {
          std::to_string(SLPCLI_VERSION_MINOR);
 }
 
-/// @brief Disables stdout and stderr.
+/// @brief Disables std{out,err}
 void disable_output() {
-#ifdef _WIN32
-  freopen("NUL", "w", stdout);
-  freopen("NUL", "w", stderr);
-#else
-  freopen("/dev/null", "w", stdout);
-  freopen("/dev/null", "w", stderr);
-#endif
+  // 1. Save originals
+  detail::saved_out = dup(fileno(stdout));
+  detail::saved_err = dup(fileno(stderr));
+
+  // 2. Redirect to null device
+  freopen(DEV_NULL, "w", stdout);
+  freopen(DEV_NULL, "w", stderr);
 }
 
-/// @brief Enables stdout and stderr.
+/// @brief Enables std{out,err}
 void enable_output() {
-#ifdef _WIN32
-  freopen("CON", "w", stdout);
-  freopen("CON", "w", stderr);
-#else
-  freopen("/dev/tty", "w", stdout);
-  freopen("/dev/tty", "w", stderr);
-#endif
+  if (detail::saved_out == -1 || detail::saved_err == -1)
+    return; // nothing to restore
+
+  fflush(stdout);
+  fflush(stderr);
+
+  dup2(detail::saved_out, fileno(stdout));
+  dup2(detail::saved_err, fileno(stderr));
+
+  close(detail::saved_out);
+  close(detail::saved_err);
+
+  detail::saved_out = detail::saved_err = -1;
 }
