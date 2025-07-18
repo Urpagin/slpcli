@@ -66,13 +66,13 @@ slp::make_handshake_packet(const int protocol_version_num = 1) const {
 
   std::vector<uint8_t> packet;
   packet.reserve(packet_size + packet_size_varint.size());
-
-  packet.append_range(packet_size_varint);
-  packet.append_range(packet_id);
-  packet.append_range(protocol_version);
-  packet.append_range(server_address);
-  packet.append_range(server_port);
-  packet.append_range(next_state);
+  packet.insert(packet.end(), packet_size_varint.begin(),
+                packet_size_varint.end());
+  packet.insert(packet.end(), packet_id.begin(), packet_id.end());
+  packet.insert(packet.end(), protocol_version.begin(), protocol_version.end());
+  packet.insert(packet.end(), server_address.begin(), server_address.end());
+  packet.insert(packet.end(), server_port.begin(), server_port.end());
+  packet.insert(packet.end(), next_state.begin(), next_state.end());
 
   return packet;
 }

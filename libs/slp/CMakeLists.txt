@@ -13,9 +13,9 @@ target_include_directories(slp
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
+        ${asio_SOURCE_DIR}/asio/include
     PRIVATE
         src  # So slp.cpp can find DataTypesUtils.h
-        ${asio_SOURCE_DIR}/asio/include
 )
 
 target_compile_definitions(slp PRIVATE ASIO_STANDALONE)

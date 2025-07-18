@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # project command. So we can include slpcliConfig.h into the program's
 # source.
 configure_file(slpcliConfig.h.in slpcliConfig.h)
+configure_file(version.txt.in version.txt @ONLY)
 
 add_subdirectory(libs/slp)
 add_subdirectory(libs/CLI11)
