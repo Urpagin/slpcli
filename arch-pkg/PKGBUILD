@@ -1,3 +1,56 @@
-# Maintainer: Urpagin dXJwYWdpbkBwcm90b24ubWUK (email is base64-encoded)
+# Maintainer: Urpagin dXJwYWdpbkBwcm90b24ubWUK
+# (email is base64-encoded)
+pkgname=slpcli-git
+pkgver=r60.ecf0442
+pkgrel=1
+pkgdesc="A Minecraft: Java Edition CLI SLP implementation in C++."
+arch=(x86_64)
+url="https://github.com/Urpagin/slpcli"
+license=('0BSD')
+depends=()
+makedepends=('git' 'cmake' 'ninja')
+provides=("${pkgname%-git}")
+conflicts=("${pkgname%-git}")
+replaces=()
+source=(
+  "${pkgname%-git}::git+https://github.com/Urpagin/slpcli.git?submodules"
+)
+noextract=()
+sha256sums=('SKIP')
 
+# TODO: REMOVE FETCH REMOTE CMAKE
+# TODO: REMOVE FETCH REMOTE CMAKE
+# TODO: REMOVE FETCH REMOTE CMAKE
+# TODO: REMOVE FETCH REMOTE CMAKE
 
+pkgver() {
+	cd "$srcdir/${pkgname%-git}"
+
+# Git, no tags available
+	printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+ 	cd "$srcdir/${pkgname%-git}"
+ 	git submodule update --init
+# 	patch -p1 -i "$srcdir/${pkgname%-git}.patch"
+}
+
+build() {
+	cd "$srcdir/${pkgname%-git}"
+	cmake -S . -B build -G Ninja \
+	-DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_CXX_FLAGS_RELEASE='-O2 -DNDEBUG -flto'
+	cmake --build build --parallel
+}
+
+check() {
+:
+	#cd "$srcdir/${pkgname%-git}"
+	#make -k check
+}
+
+package() {
+	cd "$srcdir/${pkgname%-git}"
+	cmake --install build --strip --prefix /usr
+}
