@@ -149,7 +149,7 @@ add_executable(myapp main.cpp)
 ### Steps
 
 1. Clone the repository:
-# TODO GIT CLONE SUBREPOSITORIES TOO!!!!!!!
+# TODO GIT CLONE SUBREPOSITORIES TOO!!!!!!! (test)
 ```bash
 git clone https://github.com/Urpagin/slpcli.git
 ```
