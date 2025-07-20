@@ -1,13 +1,14 @@
-# Maintainer: Urpagin dXJwYWdpbkBwcm90b24ubWUK
-# (email is base64-encoded)
+# Maintainer: Urpagin <dXJwYWdpbkBwcm90b24ubWUK>
+# (The email is base64-encoded)
+
 pkgname='slpcli-git'
 pkgver=0
 pkgrel=1
-pkgdesc="A Minecraft: Java Edition CLI SLP implementation in C++."
+pkgdesc="A Minecraft: Java Edition CLI Server List Ping implementation in C++."
 arch=('x86_64')
 url="https://github.com/Urpagin/slpcli"
 license=('0BSD')
-depends=()
+depends=('glibc' 'gcc-libs')
 provides=("${pkgname%-git}")
 conflicts=("${pkgname%-git}")
 makedepends=('git' 'cmake' 'ninja')
@@ -37,6 +38,7 @@ build() {
 	cd "$srcdir/${pkgname%-git}"
 	cmake -S . -B build -G Ninja \
 	-DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_CXX_FLAGS_RELEASE='-O2 -DNDEBUG' \
 	-DFETCHCONTENT_FULLY_DISCONNECTED=ON \
 	-DFETCHCONTENT_SOURCE_DIR_ASIO="$srcdir/asio"
 	cmake --build build --parallel
