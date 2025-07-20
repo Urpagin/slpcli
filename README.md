@@ -1,12 +1,16 @@
 # slpcli
 
-**A simple C++ tool to query the Server List Ping (SLP) of a Minecraft: Java Edition (Notchian) server.**
+🚀 **A simple C++ tool to query the Server List Ping (SLP) of a Minecraft: Java Edition (Notchian) server.**
 
 ---
 
-*A naive implementation of the Server List Ping (SLP) protocol in C++ using [non-boost Asio](https://think-async.com/Asio/).*
+🔧 *A naive implementation of the Server List Ping (SLP) protocol in C++ using [non-boost Asio](https://think-async.com/Asio/).*
 
-## Usage
+📦 **Available on the AUR:** [`slpcli-git`](https://aur.archlinux.org/packages/slpcli-git)
+
+---
+
+## 📌 Usage
 
 ```bash
 ./slpcli [OPTIONS] addr [port]
@@ -22,9 +26,9 @@ OPTIONS:
   -p, --port UINT             Server port (default is 25565).
 ```
 
-## Examples
+## 🛠️ Examples
 
-### Basic Usage
+### 🎯 Basic Usage
 
 Without specifying a port (default port 25565):
 
@@ -45,6 +49,7 @@ Specifying a port (option 2):
 ```
 
 Real example for Hypixel, prettified with [`jq`](https://jqlang.org/):
+
 ```bash
 $ ./slpcli --quiet mc.hypixel.net | jq .
 {
@@ -62,7 +67,7 @@ $ ./slpcli --quiet mc.hypixel.net | jq .
 }
 ```
 
-### Extracting Data with jq
+### 🔍 Extracting Data with jq
 
 Display the number of online players using [`jq`](https://jqlang.org/):
 
@@ -71,7 +76,7 @@ Display the number of online players using [`jq`](https://jqlang.org/):
 # Output: 438
 ```
 
-### Displaying Server Favicon
+### 🖼️ Displaying Server Favicon
 
 Use chained bash commands with [`feh`](https://github.com/derf/feh) to display the server favicon:
 
@@ -85,15 +90,35 @@ Save favicon as an image file:
 ./slpcli mc.hypixel.net -q | jq .favicon -r | cut -d, -f2 | base64 -d > favicon.png
 ```
 
-## Quiet Mode
+### 🤫 Quiet Mode
 
-The `-q` or `--quiet` option suppresses diagnostic messages on stdout and stderr, outputting only the raw JSON payload or an empty string upon error. Useful for shell pipelines.
+The `-q` or `--quiet` option suppresses diagnostic messages, outputting only the raw JSON payload or an empty string upon error. Useful for shell pipelines.
 
 ---
 
-## Building
+## 📦 Installation
 
-You can use the provided `run_debug.sh` script or build manually:
+> [!WARNING]
+> The project is currently **only** available on Arch Linux's User Repository (AUR). On other distrubutions and OSs you'll have to manually build it or download a binary in the [Releases](https://github.com/Urpagin/slpcli/releases).  
+
+You have two main ways to install `slpcli` on Arch Linux
+
+1. Use your favorite AUR helper like [`yay`](https://github.com/Jguer/yay) or [`paru`](https://github.com/Morganamilo/paru):
+```bash
+yay -S slpcli-git
+```
+
+2. Install directly from the `PKGBUILD` file
+```bash
+sudo pacman -S --needed git base-devel
+git clone --recursive https://github.com/Urpagin/slpcli.git
+cd slpcli/arch-pkg
+makepkg -si
+```
+
+## 🏗️ Building
+
+Use the provided `run_debug.sh` script or build manually:
 
 ### Manual Build
 
@@ -107,9 +132,11 @@ make -j$(nproc)
 
 ---
 
-## Compatibility
+## 💻 Compatibility
 
 ### Platforms
+
+🌐 *Cross-platform enabled thanks to Asio*
 
 | OS      | Compatibility |
 | ------- | ------------- |
@@ -117,15 +144,16 @@ make -j$(nproc)
 | macOS   | ✅ YES         |
 | Windows | ✅ YES         |
 
-*Note*: Manual build required for non-Linux/macOS platforms (enabled by Asio).
+> [!NOTE]
+> ⚠️ Manual build required for non-Linux/macOS platforms.
 
-### C++ Version
+### 📐 C++ Version
 
 * Requires C++23 or newer.
 
 ---
 
-## Integrating SLP Code in Your C++ Project
+## 📖 Integrating SLP Code in Your C++ Project
 
 Starting from a basic project structure:
 
@@ -146,15 +174,15 @@ project(myapp)
 add_executable(myapp main.cpp)
 ```
 
-### Steps
+### 🚩 Steps
 
-1. Clone the repository:
-# TODO GIT CLONE SUBREPOSITORIES TOO!!!!!!! (test)
+1. 📥 Clone the repository (**do not omit `--recursive`**):
+
 ```bash
-git clone https://github.com/Urpagin/slpcli.git
+git clone --recursive https://github.com/Urpagin/slpcli.git
 ```
 
-2. Link the library in your project's `CMakeLists.txt`:
+2. 🔗 Link the library in your project's `CMakeLists.txt`:
 
 ```cmake
 cmake_minimum_required(VERSION 3.24)
@@ -169,7 +197,7 @@ add_executable(myapp main.cpp)
 target_link_libraries(myapp PRIVATE slp)
 ```
 
-3. Use the library in your project:
+3. 📝 Use the library in your project:
 
 ```cpp
 #include <iostream>
@@ -183,7 +211,7 @@ int main() {
 }
 ```
 
-4. Build and run:
+4. 🏭 Build and run:
 
 ```bash
 mkdir -p build && cd build
@@ -194,21 +222,26 @@ make -j$(nproc)
 
 ---
 
-## Known Issues
+## ⚠️ Known Issues
 
-### VarInt Handling
+### 🔢 VarInt Handling
 
-VarInt values in this implementation are stored as `int` (32 bits). However, Minecraft VarInts may reach up to 5 bytes (35 bits). Thus, this implementation does not fully comply with the protocol for very large VarInts. This limitation is intentional and acceptable for typical usage scenarios.
+VarInt values are stored as `int` (32 bits), limiting full protocol compliance for VarInts larger than 35 bits. This limitation is intentional and acceptable for typical usage scenarios.
 
 ---
 
-## References & Acknowledgments
+## 📚 References & Acknowledgments
 
-* [Minecraft: Java Edition protocol wiki](https://minecraft.wiki/w/Java_Edition_protocol/)
+* [Minecraft Protocol](https://minecraft.wiki/w/Java_Edition_protocol/)
+
 * [Server List Ping Protocol](https://minecraft.wiki/w/Java_Edition_protocol/Server_List_Ping)
+
 * [Packet Format](https://minecraft.wiki/w/Java_Edition_protocol/Packets)
+
 * [String Format](https://minecraft.wiki/w/Java_Edition_protocol/Data_types#Type:String)
+
 * [VarInt Logic](https://minecraft.wiki/w/Java_Edition_protocol/Packets#VarInt_and_VarLong)
 
-* [The ASIO library for socket programming](https://think-async.com/Asio/)
-* [The CLI11 library for command-line interface parsing](https://github.com/CLIUtils/CLI11)
+* [ASIO library for socket programming](https://think-async.com/Asio/)
+
+* [CLI11 for CLI parsing](https://github.com/CLIUtils/CLI11)
