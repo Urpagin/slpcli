@@ -228,6 +228,9 @@ make -j$(nproc)
 
 VarInt values are stored as `int` (32 bits), limiting full protocol compliance for VarInts larger than 35 bits. This limitation is intentional and acceptable for typical usage scenarios.
 
+## Timeout
+There isn't a timeout system in place as of now. This is very problematic as bogus/down hostnames make the program pend.
+
 ---
 
 ## 📚 References & Acknowledgments
