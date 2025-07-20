@@ -4,3 +4,4 @@
 [submodule "arch-pkg"]
 	path = arch-pkg
 	url = ssh://aur@aur.archlinux.org/slpcli-git.git
+	update = none
