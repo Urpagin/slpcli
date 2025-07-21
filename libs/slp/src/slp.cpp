@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <array>
 
+#include <chrono>
+#include <future>
 #include <iostream>
 #include <ostream>
 #include <string>
@@ -18,12 +20,12 @@
 
 // Constructor definition
 slp::slp(const std::string_view server_addr, const uint16_t server_port,
-         const int timeout)
-    : server_addr(server_addr), server_port(server_port), timeout(timeout) {}
+         const int timeout, const int handshake_protocol_version)
+    : server_addr(server_addr), server_port(server_port), timeout(timeout),
+      protocol_version(handshake_protocol_version) {}
 
 /// @brief Builds the Handshake packet.
-std::vector<uint8_t>
-slp::make_handshake_packet(const int protocol_version_num = 1) const {
+std::vector<uint8_t> slp::make_handshake_packet() const {
   // https://minecraft.wiki/w/Java_Edition_protocol/Packets#Without_compression
   // [Uncompressed Packet Format]:
   // VarInt: Length of packet_id and data
@@ -47,7 +49,7 @@ slp::make_handshake_packet(const int protocol_version_num = 1) const {
   using dtu = DataTypesUtils;
 
   const auto packet_id = dtu::make_varint(0x00);
-  const auto protocol_version = dtu::make_varint(protocol_version_num);
+  const auto protocol_version = dtu::make_varint(this->protocol_version);
   const auto server_address = dtu::make_string(this->server_addr);
   // const uint16_t server_port = this->server_port;
   const std::array server_port = {
@@ -149,14 +151,6 @@ asio::ip::tcp::socket slp::get_conn_socket(asio::io_context &io_context) const {
   asio::connect(socket, resolver.resolve(this->server_addr,
                                          std::to_string(this->server_port)));
 
-  // TODO: Set timeout
-  // TODO: Set timeout
-  // TODO: Set timeout
-  // TODO: Set timeout
-  // TODO: Set timeout
-  // TODO: Set timeout
-  // TODO: Set timeout
-
   return std::move(socket);
 }
 
@@ -164,9 +158,9 @@ asio::ip::tcp::socket slp::get_conn_socket(asio::io_context &io_context) const {
 /// returns the JSON response.
 /// @returns The JSON string of the Status Response packet.
 /// @throws asio::system_error For any errors encountered.
-std::string slp::query_slp() const {
+std::string slp::_query_slp() const {
   // 'Build Handshake' and 'Status Request' packets.
-  auto handshake_packet = make_handshake_packet(-1);
+  auto handshake_packet = make_handshake_packet();
   auto status_request_packet = make_status_request_packet();
 
   asio::io_context io_context{};
@@ -186,4 +180,30 @@ std::string slp::query_slp() const {
               << std::endl;
     throw;
   }
+}
+
+/// @brief Queries the Minecraft server using the Status List Ping protocol and
+/// returns the JSON response.
+/// @returns The JSON string of the Status Response packet.
+/// @throws asio::system_error For any errors encountered.
+/// @details Small wrapper over the real function to add a timeout.
+/// Source: https://stackoverflow.com/a/51850018
+std::string slp::query_slp() const {
+  auto fut =
+      std::async(std::launch::async, [&]() { return this->_query_slp(); });
+
+  switch (fut.wait_for(std::chrono::seconds{this->timeout})) {
+  case std::future_status::deferred:
+    //... should never happen with std::launch::async
+    break;
+  case std::future_status::ready:
+    return fut.get();
+    break;
+  case std::future_status::timeout:
+    std::cerr << "Error: timeout of " << this->timeout << "s exceeded."
+              << std::endl;
+    throw;
+  }
+
+  return {""};
 }

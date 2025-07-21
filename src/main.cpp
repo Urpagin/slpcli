@@ -36,12 +36,13 @@ struct AppOptions {
   bool is_quiet{false};
   std::string addr;
   uint16_t port{25565};
+  int protocol_version_handshake{-1};
 };
 AppOptions parse_args(int, char **);
 
 int main(const int argc, char *argv[]) {
   // This syntax is so cool
-  const auto [is_quiet, addr, port] = parse_args(argc, argv);
+  const auto [is_quiet, addr, port, protocol_version] = parse_args(argc, argv);
 
   if (is_quiet)
     disable_output();
@@ -49,7 +50,7 @@ int main(const int argc, char *argv[]) {
   std::cout << "Querying '" << addr << ":" << port << "'...\n\n" << std::endl;
 
   try {
-    const slp serv(addr, port);
+    const slp serv{addr, port, 1};
     const std::string slp_response{serv.query_slp()};
 
     // Print JSON
@@ -92,7 +93,7 @@ AppOptions parse_args(const int argc, char **argv) {
 
   AppOptions opts;
 
-  app.add_flag("-q,--quiet", opts.is_quiet,
+  app.add_flag("-s,--silent", opts.is_quiet,
                "Only prints the JSON or an empty string if error.");
   app.add_option("-a,--address,addr", opts.addr,
                  "Server address with optional \":port\".")
@@ -100,6 +101,10 @@ AppOptions parse_args(const int argc, char **argv) {
   const auto port_opt =
       app.add_option("-p,--port,port", opts.port,
                      "Port of the Minecraft server (default 25565).");
+  const auto protocol_version = app.add_option(
+      "--protocol-version", opts.protocol_version_handshake,
+      "The protocol version that the client plans on using to connect "
+      "to the server. Don't change if you don't know what it means.");
 
   try {
     app.parse(argc, argv); // may std::exit on help/usage

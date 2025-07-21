@@ -231,6 +231,12 @@ VarInt values are stored as `int` (32 bits), limiting full protocol compliance f
 ## Timeout
 There isn't a timeout system in place as of now. This is very problematic as bogus/down hostnames make the program pend.
 
+## TODO
+
+* Fix the very small overhead of launching a new thread with `std::async` by using an Asio-native solution (see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)).
+
+* Add support for Bedrock Edition?
+
 ---
 
 ## 📚 References & Acknowledgments
