@@ -189,21 +189,30 @@ std::string slp::_query_slp() const {
 /// @details Small wrapper over the real function to add a timeout.
 /// Source: https://stackoverflow.com/a/51850018
 std::string slp::query_slp() const {
-  auto fut =
-      std::async(std::launch::async, [&]() { return this->_query_slp(); });
+  std::promise<std::string> promise;
+  std::future<std::string> fut = promise.get_future();
 
-  switch (fut.wait_for(std::chrono::seconds{this->timeout})) {
-  case std::future_status::deferred:
-    //... should never happen with std::launch::async
-    break;
-  case std::future_status::ready:
+  std::thread t([&promise, this]() {
+    try {
+      promise.set_value(this->_query_slp());
+    } catch (...) {
+      try {
+        promise.set_exception(std::current_exception());
+      } catch (...) {
+        // set_exception might throw too
+      }
+    }
+  });
+
+  if (fut.wait_for(std::chrono::seconds{this->timeout}) ==
+      std::future_status::ready) {
+    t.join(); // Safe: thread finished
     return fut.get();
-    break;
-  case std::future_status::timeout:
-    std::cerr << "Error: timeout of " << this->timeout << "s exceeded."
-              << std::endl;
-    throw;
   }
-
-  return {""};
+  std::cerr << "Error: timeout of " << this->timeout << "s exceeded."
+            << std::endl;
+  t.detach(); // Don't block, let thread run and die on its own
+  throw asio::system_error(asio::error::timed_out,
+                           "SLP query timed out after " +
+                               std::to_string(this->timeout) + "s");
 }

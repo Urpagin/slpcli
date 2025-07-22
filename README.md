@@ -228,12 +228,9 @@ make -j$(nproc)
 
 VarInt values are stored as `int` (32 bits), limiting full protocol compliance for VarInts larger than 35 bits. This limitation is intentional and acceptable for typical usage scenarios.
 
-## Timeout
-There isn't a timeout system in place as of now. This is very problematic as bogus/down hostnames make the program pend.
-
 ## TODO
 
-* Fix the very small overhead of launching a new thread with `std::async` by using an Asio-native solution (see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)).
+* Remove the small overhead of launching a new thread with `std::thread` by using an Asio-native solution (see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)).
 
 * Add support for Bedrock Edition?
 
