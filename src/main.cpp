@@ -155,8 +155,8 @@ void disable_output() {
   detail::saved_err = dup(fileno(stderr));
 
   // 2. Redirect to null device
-  freopen(DEV_NULL, "w", stdout);
-  freopen(DEV_NULL, "w", stderr);
+  (void)freopen(DEV_NULL, "w", stdout);
+  (void)freopen(DEV_NULL, "w", stderr);
 }
 
 /// @brief Enables std{out,err}
