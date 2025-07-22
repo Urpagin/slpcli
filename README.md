@@ -4,7 +4,8 @@
 
 ---
 
-🔧 *A naive implementation of the Server List Ping (SLP) protocol in C++ using [non-boost Asio](https://think-async.com/Asio/).*
+🔧 *A naive implementation of the Server List Ping (SLP) protocol in C++
+using [non-boost Asio](https://think-async.com/Asio/).*
 
 📦 **Available on the AUR:** [`slpcli-git`](https://aur.archlinux.org/packages/slpcli-git)
 
@@ -57,7 +58,7 @@ Specifying a port (option 2):
 Real example for Hypixel, prettified with [`jq`](https://jqlang.org/):
 
 ```bash
-$ ./slpcli --quiet mc.hypixel.net | jq .
+$ ./slpcli --silent mc.hypixel.net | jq .
 {
   "version": {
     "name": "Requires MC 1.8 / 1.21",
@@ -78,7 +79,7 @@ $ ./slpcli --quiet mc.hypixel.net | jq .
 Display the number of online players using [`jq`](https://jqlang.org/):
 
 ```bash
-./slpcli -q purpleprison.net | jq '.players.online'
+./slpcli -s purpleprison.net | jq '.players.online'
 # Output: 438
 ```
 
@@ -87,34 +88,39 @@ Display the number of online players using [`jq`](https://jqlang.org/):
 Use chained bash commands with [`feh`](https://github.com/derf/feh) to display the server favicon:
 
 ```bash
-./slpcli mc.hypixel.net -q | jq .favicon -r | cut -d, -f2 | base64 -d | feh -
+./slpcli mc.hypixel.net -s | jq .favicon -r | cut -d, -f2 | base64 -d | feh -
 ```
 
 Save favicon as an image file:
 
 ```bash
-./slpcli mc.hypixel.net -q | jq .favicon -r | cut -d, -f2 | base64 -d > favicon.png
+./slpcli mc.hypixel.net -s | jq .favicon -r | cut -d, -f2 | base64 -d > favicon.png
 ```
 
 ### 🤫 Quiet Mode
 
-The `-q` or `--quiet` option suppresses diagnostic messages, outputting only the raw JSON payload or an empty string upon error. Useful for shell pipelines.
+The `-s` or `--silent` option suppresses diagnostic messages, outputting only the raw JSON payload or an empty string
+upon error. Useful for shell pipelines.
 
 ---
 
 ## 📦 Installation
 
 > [!WARNING]
-> The project is currently **only** available on Arch Linux's User Repository (AUR). On other distrubutions and OSs you'll have to manually build it or download a binary in the [Releases](https://github.com/Urpagin/slpcli/releases).  
+> The project is currently **only** available on Arch Linux's User Repository (AUR). On other distrubutions and OSs
+> you'll have to manually build it or download a binary in the [Releases](https://github.com/Urpagin/slpcli/releases).
 
 You have two main ways to install `slpcli` on Arch Linux
 
-1. Use your favorite AUR helper like [`yay`](https://github.com/Jguer/yay) or [`paru`](https://github.com/Morganamilo/paru):
+1. Use your favorite AUR helper like [`yay`](https://github.com/Jguer/yay) or [
+   `paru`](https://github.com/Morganamilo/paru):
+
 ```bash
 yay -S slpcli-git
 ```
 
 2. Install directly from the `PKGBUILD` file
+
 ```bash
 sudo pacman -S --needed git base-devel
 git clone --recursive https://github.com/Urpagin/slpcli.git
@@ -145,7 +151,7 @@ make -j$(nproc)
 🌐 *Cross-platform enabled thanks to Asio*
 
 | OS      | Compatibility |
-| ------- | ------------- |
+|---------|---------------|
 | Linux   | ✅ YES         |
 | macOS   | ✅ YES         |
 | Windows | ✅ YES         |
@@ -232,11 +238,13 @@ make -j$(nproc)
 
 ### 🔢 VarInt Handling
 
-VarInt values are stored as `int` (32 bits), limiting full protocol compliance for VarInts larger than 35 bits. This limitation is intentional and acceptable for typical usage scenarios.
+VarInt values are stored as `int` (32 bits), limiting full protocol compliance for VarInts larger than 35 bits. This
+limitation is intentional and acceptable for typical usage scenarios.
 
 ## TODO
 
-* Remove the small overhead of launching a new thread with `std::thread` by using an Asio-native solution (see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)).
+* Remove the small overhead of launching a new thread with `std::thread` by using an Asio-native solution (
+  see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)).
 
 * Add support for Bedrock Edition?
 
