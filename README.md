@@ -15,15 +15,21 @@
 ```bash
 ./slpcli [OPTIONS] addr [port]
 
-POSITIONAL ARGUMENTS:
-  addr TEXT REQUIRED          Server address (optional format "address:port").
-  port UINT                   Server port (default is 25565).
+
+POSITIONALS:
+  addr TEXT REQUIRED          Server address with optional ":port". 
+  port UINT                   Port of the Minecraft server (default 25565). 
 
 OPTIONS:
-  -h, --help                  Display help message and exit.
-  -q, --quiet                 Print only JSON response or an empty string if an error occurs.
-  -a, --address TEXT REQUIRED Server address (optional format "address:port").
-  -p, --port UINT             Server port (default is 25565).
+  -h,     --help              Print this help message and exit 
+  -s,     --silent            Only prints the JSON or an empty string if error. 
+  -a,     --address TEXT REQUIRED 
+                              Server address with optional ":port". 
+  -p,     --port UINT         Port of the Minecraft server (default 25565). 
+  -t,     --timeout INT       The timeout in seconds at which the query is dropped 
+          --protocol-version INT 
+                              The protocol version that the client plans on using to connect to 
+                              the server. Don't change if you don't know what it means. 
 ```
 
 ## 🛠️ Examples

@@ -103,13 +103,14 @@ AppOptions parse_args(const int argc, char **argv) {
   const auto port_opt =
       app.add_option("-p,--port,port", opts.port,
                      "Port of the Minecraft server (default 25565).");
+
+  app.add_option("-t,--timeout", opts.timeout,
+                 "The timeout in seconds at which the query is dropped");
+
   app.add_option(
       "--protocol-version", opts.protocol_version_handshake,
       "The protocol version that the client plans on using to connect "
       "to the server. Don't change if you don't know what it means.");
-
-  app.add_option("-t,--timeout", opts.timeout,
-                 "The timeout in seconds at which the query is dropped");
 
   try {
     app.parse(argc, argv); // may std::exit on help/usage
