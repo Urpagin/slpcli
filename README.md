@@ -248,6 +248,8 @@ limitation is intentional and acceptable for typical usage scenarios.
 
 * Add support for Bedrock Edition?
 
+* Add thread-pool + async requests to check text file for online MC servers.
+
 ---
 
 ## 📚 References & Acknowledgments
