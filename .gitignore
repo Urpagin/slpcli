@@ -45,6 +45,3 @@ dist/
 .idea/
 asio*/
 build*/
-arch-pkg/*
-!arch-pgk/PKGBUILD
-
