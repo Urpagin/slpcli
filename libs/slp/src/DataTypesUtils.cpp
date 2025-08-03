@@ -10,17 +10,16 @@
 /// @brief Makes a VarInt from an int.
 /// @return A vector of bytes ranging from 1 to 5 bytes inclusive.
 std::vector<uint8_t> DataTypesUtils::make_varint(const int value) {
-  auto val =
-      static_cast<uint32_t>(value); // Don't bother with negative and such.
+  auto val = static_cast<uint32_t>(value); // Don't bother with negative.
   std::vector<uint8_t> varint{};    // Byte by Byte vector
   varint.reserve(MAX_VARINT_SIZE);  // Max 5 bytes for VarInt.
 
   while (val & (~DATA_BITS)) {
     // From the LSB's side.
-    varint.push_back((val & DATA_BITS) | CONTINUE_BIT);
+    varint.emplace_back((val & DATA_BITS) | CONTINUE_BIT);
     val >>= 7;
   }
-  varint.push_back(val & DATA_BITS);
+  varint.emplace_back(val & DATA_BITS);
   return varint;
 }
 
