@@ -247,7 +247,7 @@ limitation is intentional and acceptable for typical usage scenarios.
 ## TODO
 
 * Remove the small overhead of launching a new thread with `std::thread` by using an Asio-native solution (
-  see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)).
+  see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)) / [Source Code](https://github.com/chriskohlhoff/asio/tree/master/asio/src/examples/cpp11/timeouts).
 
 * Add support for Bedrock Edition?
 
