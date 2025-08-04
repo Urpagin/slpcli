@@ -57,22 +57,8 @@ Specifying a port (option 2):
 
 Real example for Hypixel, prettified with [`jq`](https://jqlang.org/):
 
-```bash
-$ ./slpcli --silent mc.hypixel.net | jq .
-{
-  "version": {
-    "name": "Requires MC 1.8 / 1.21",
-    "protocol": 47
-  },
-  "players": {
-    "max": 200000,
-    "online": 31198,
-    "sample": []
-  },
-  "description": "                §aHypixel Network §c[1.8-1.21]\n     §6§lSB 0.23.1 §2§lFORAGING §8§l- §e§lSUMMER EVENT",
-  "favicon": "<trimmed for GitHub>"
-}
-```
+*(click to play)*
+[![asciicast](https://asciinema.org/a/pqljUYpBR9wftuD28h2sE4VCz.svg)](https://asciinema.org/a/pqljUYpBR9wftuD28h2sE4VCz)
 
 ### 🔍 Extracting Data with jq
 
