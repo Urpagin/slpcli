@@ -74,7 +74,7 @@ $ ./slpcli --silent mc.hypixel.net | jq .
 }
 ```
 
-Video example without the `--silent` flag:
+Video example:
 [![asciicast](https://asciinema.org/a/pqljUYpBR9wftuD28h2sE4VCz.svg)](https://asciinema.org/a/pqljUYpBR9wftuD28h2sE4VCz)
 
 ### 🔍 Extracting Data with jq
