@@ -9,11 +9,12 @@
 #include <thread>
 
 #include "Connection.h"
+#include "slp.h"
 
-
-using Callback = std::function<void(Outcome)>;
 
 // TODO: Race I/O instead of `steady_timer`. The winner cancels the loser. Simpler.
+
+// TODO: enforce an inflight cap. (isnt this the semaphore already?)
 
 class Dispatcher {
     /// I/O Interface with the kernel.
@@ -35,9 +36,6 @@ class Dispatcher {
     /// Thread pool that will call the callback on other threads so that the workers
     /// aren't waiting for the callback to finish.
     asio::thread_pool cb_pool{DEFAULT_CALLBACK_EX_THREADS};
-
-    /// Default semaphore limit.
-    constexpr static size_t DEFAULT_SEM_LIMIT{100};
 
     /// Limits the number of tasks at one time.
     sam::semaphore semaphore_;
@@ -75,7 +73,8 @@ public:
     ///
     /// The callback function.
     /// The I/O executor.
-    Dispatcher(Callback , std::optional<size_t>);
+    Dispatcher(Callback callback, SlpOptions opts);
+
 
     /// @brief Destructor - Calls seal() and finish().
     ~Dispatcher() {
@@ -88,10 +87,10 @@ public:
     bool submit(ServerQuery);
 
     /// @brief Seals the sink, not allowing any more servers to be queued up.
-    static void seal();
+    void seal() const;
 
     /// @brief BLOCKING - waits for all threads & coroutines to rejoin & return.
-    static void finish();
+    void finish() const;
 
 
     // TODO: submit_range(R&& range) that just loops and calls submit per element.

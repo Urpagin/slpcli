@@ -1,65 +1,103 @@
 //
-// Created by Urpagin on 2023-12-01.
-// My first real C++ project
+// Created by urpagin on 8/10/25.
 //
 
-#ifndef SLP_H
-#define SLP_H
-
-#include <asio/ip/address_v4.hpp>
-#include <asio/ip/tcp.hpp>
+#ifndef SLPCLI_SLP_H
+#define SLPCLI_SLP_H
+#include <chrono>
+#include <cstdint>
+#include <expected>
+#include <functional>
+#include <memory>
 #include <string>
-#include <vector>
+#include <thread>
 
-/// Implementation of a simple Server List Ping protocol for Minecraft: Java
-/// Edition.
-///
-/// Source: https://minecraft.wiki/w/Java_Edition_protocol/Server_List_Ping
-class slp {
-    /// The Minecraft: Java Edition server address
-    std::string_view server_addr;
-    /// The Minecraft server port
-    uint16_t server_port;
-    /// A number of seconds at which the query will be cancelled.
-    int timeout;
-    /// The protocol version that will be sent to the server inside the Handshake
-    /// packet.
-    int protocol_version;
 
-    /// Context for all IO events.
-    asio::io_context io_context_;
-
-    /// The timeout deadline for the whole time an SLP ping happens.
-    asio::steady_timer deadline_;
-
-    /// Returns the ASIO socket, connected to the MC server.
-    asio::ip::tcp::socket get_conn_socket();
-
-    /// Packet size + PacketID(0x00) + No data
-    static constexpr size_t STATUS_REQUEST_SIZE{2};
-
-    /// Builds the Handshake packet
-    [[nodiscard]] std::vector<uint8_t> make_handshake_packet() const;
-    /// Builds the Status Request packet.
-    [[nodiscard]] static std::array<uint8_t, STATUS_REQUEST_SIZE> make_status_request_packet();
-    /// Parses the socket to read the JSON.
-    static std::string read_json_status_response_packet(asio::ip::tcp::socket &);
-
-    /// Does plenty of things and return the Status Response JSON string from
-    /// the MC server.
-    [[nodiscard]] std::string _query_slp();
-
-public:
-    // Constructor
-    // why the explicit, I don't really know. To not construct anonymously?
-    explicit slp(std::string_view server_addr, uint16_t server_port = 25565, int timeout = 5,
-                 int handshake_protocol_version = -1);
-
-    /// Queries the Minecraft notchian server using the Server List Ping protocol
-    /// and returns a JSON string.
-    /// This is a small wrapper over the real private _query_slp() function to
-    /// Add the timeout.
-    [[nodiscard]] std::string query_slp();
+/// @brief Represents a Minecraft server.
+struct McServer {
+    /// Address of the Minecraft server.
+    std::string address;
+    /// Port of the Minecraft server.
+    uint16_t port;
 };
 
-#endif // SLP_H
+/// @brief Result of a Minecraft server's SLP protocol query and some metadata.
+struct Result {
+    /// The MC server.
+    McServer server;
+    /// SLP response of the Minecraft server.
+    std::string json;
+};
+
+/// @brief Result of a failed query to a Minecraft server.
+struct ResultErr {
+    /// The MC server;
+    McServer server;
+    /// Error message.
+    std::string message;
+};
+
+/// @brief The info that are required to query a Minecraft server.
+struct ServerQuery {
+    /// The server to query.
+    McServer server;
+
+    /// The timeout in seconds for the duration of the whole operation
+    /// from connect to reads & writes.
+    std::chrono::milliseconds timeout;
+
+    /// The protocol version included in the Handshake packet.
+    /// Default to `-1`. Should work, if not, set something else.
+    int protocol_version{-1};
+};
+
+/// Response type when querying a server.
+using Outcome = std::expected<Result, ResultErr>;
+/// Callback function type that's called each server query.
+using Callback = std::function<void(Outcome)>;
+
+/// Options for the dispatcher.
+struct SlpOptions {
+    /// Controls the number of asynchronous tasks at one time.
+    size_t semaphore_count{1024};
+    /// Controls the number of threads running, each querying servers.
+    size_t worker_thread_count{std::thread::hardware_concurrency()};
+    /// Controls the number of threads running, each calling the callback function with the MC servers responses.
+    size_t callback_worker_threads{1};
+    /// Controls the total time the whole query takes at max. DNS query, connection, reads & writes.
+    /// If the query exceeds the timeout, it is dropped.
+    std::chrono::milliseconds timeout;
+};
+
+/// @brief Query the SLP protocol on Minecraft: Java Edition servers.
+///
+/// Following the PIMPL pattern.
+class slp {
+public:
+    explicit slp(SlpOptions, Callback);
+    ~slp();
+
+    // Copy & Move constructors. (Black magic for now)
+    slp(const slp &) = delete;
+    slp &operator=(const slp &) = delete;
+    slp(slp &&) noexcept = default;
+    slp &operator=(slp &&) noexcept = default;
+
+    void submit(ServerQuery q) const;
+    void seal() const;
+    void finish() const;
+
+    // Sugar:
+    // Reads servers from an istream, streams results to a Callback, then returns.
+    // void run_streaming(std::istream& in, const Client::Options&, Callback cb);
+
+private:
+    // We follow the PIMPL pattern.
+    // So-called "forward-declaration"
+    // The Impl is defined only in the source file.
+    struct Impl;
+    std::unique_ptr<Impl> p_; // pointer to the real data
+};
+
+
+#endif // SLPCLI_SLP_H

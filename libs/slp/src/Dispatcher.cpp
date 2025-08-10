@@ -3,13 +3,15 @@
 //
 
 #include "Dispatcher.h"
+
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
+#include <iostream>
 #include <thread>
 #include <utility>
 
 
-Dispatcher::Dispatcher(Callback callback, const std::optional<size_t> worker_thread_count = {}) :
+Dispatcher::Dispatcher(Callback callback, SlpOptions opts) :
     ioc_(asio::io_context{}), ex_guard_(ioc_.get_executor()), cb_(std::move(callback)),
     semaphore_(ioc_.get_executor(), DEFAULT_SEM_LIMIT), worker_count_(get_worker_count(worker_thread_count)) {
 
@@ -37,12 +39,21 @@ asio::awaitable<void> Dispatcher::query_one(ServerQuery q) {
     Connection conn{ioc_.get_executor(), std::move(q)};
 
     // Actually query the Minecraft server, await the response.
-    const Outcome res = co_await conn.query();
+    Outcome res = co_await conn.query();
 
     // Post a task to be executed eagerly by another executor (not the main one)
     // Using the cb_ex to execute the callback function calls, so that we can continue
     // to query servers as fast as possible.
-    asio::post(cb_pool.get_executor(), [r = std::move(res), cb = cb_]() { cb(std::move(r)); });
+    asio::post(cb_pool.get_executor(), [r = std::move(res), cb = cb_, count = &in_flight_]() {
+        try {
+            cb(std::move(r));
+        } catch (const std::exception &e) {
+            std::cerr << "Error: exception while querying: " << e.what() << std::endl;
+        }
+        --(*count);
+    });
+
+    co_return;
 }
 
 bool Dispatcher::submit(ServerQuery query) {
@@ -60,6 +71,6 @@ bool Dispatcher::submit(ServerQuery query) {
     return true;
 }
 
-void Dispatcher::seal() {}
+void Dispatcher::seal() const { std::cout << "seal()\n"; }
 
-void Dispatcher::finish() {}
+void Dispatcher::finish() const { std::cout << "finish()\n"; }

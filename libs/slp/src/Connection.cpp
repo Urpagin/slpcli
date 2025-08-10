@@ -144,6 +144,7 @@ asio::awaitable<Outcome> Connection::query() {
 
 
     std::cout << "Querying SLP..." << std::endl;
+
     Outcome res = co_await query_slp();
     co_return res;
 }

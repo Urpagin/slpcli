@@ -9,46 +9,7 @@
 #include <asio/ip/tcp.hpp>
 #include <expected>
 
-/// @brief Represents a Minecraft server.
-struct McServer {
-    /// Address of the Minecraft server.
-    std::string address;
-    /// Port of the Minecraft server.
-    uint16_t port;
-};
 
-/// @brief Result of a Minecraft server's SLP protocol query and some metadata.
-struct Result {
-    /// The MC server.
-    McServer server;
-    /// SLP response of the Minecraft server.
-    std::string json;
-};
-
-/// @brief Result of a failed query to a Minecraft server.
-struct ResultErr {
-    /// The MC server;
-    McServer server;
-    /// Error message.
-    std::string message;
-};
-
-/// @brief The info that are required to query a Minecraft server.
-struct ServerQuery {
-    /// The server to query.
-    McServer server;
-
-    /// The protocol version included in the Handshake packet.
-    /// `-1` should work, if not, set something else.
-    int protocol_version{-1};
-
-    /// The timeout in seconds for the duration of the whole operation
-    /// from connect to reads & writes.
-    size_t timeout_s;
-};
-
-
-using Outcome = std::expected<Result, ResultErr>;
 
 /// @brief Object that manager a singular asynchronous connection to
 /// a Minecraft server.
