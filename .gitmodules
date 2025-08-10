@@ -5,3 +5,6 @@
 	path = arch-pkg
 	url = ssh://aur@aur.archlinux.org/slpcli-git.git
 	update = none
+[submodule "libs/sam"]
+	path = libs/sam
+	url = https://github.com/klemens-morgenstern/sam.git

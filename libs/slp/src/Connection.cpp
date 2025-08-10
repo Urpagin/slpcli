@@ -8,9 +8,10 @@
 
 #include <iostream>
 
+using namespace std::string_literals;
 
-Connection::Connection(asio::io_context &io_context, ServerQuery server, const std::function<void(Outcome)> &callback) :
-    server_query_{std::move(server)}, socket_(io_context), deadline_(io_context), callback_(callback) {}
+Connection::Connection(const asio::any_io_executor &ex, ServerQuery server) :
+    server_query_{std::move(server)}, socket_(ex), deadline_(ex) {}
 
 
 /// @brief Read the socket for the Status Response packet and returns the bytes
@@ -103,7 +104,7 @@ void Connection::check_deadline() {
 
 /// @brief Queries the Minecraft server using the Status List Ping protocol and
 /// calls the `callback_` function passing in a `std::expected<Result, ResultErr>`,
-asio::awaitable<void> Connection::query_slp() {
+asio::awaitable<Outcome> Connection::query_slp() {
     using dtu = DataTypesUtils;
 
     // 'Build Handshake' and 'Status Request' packets.
@@ -114,24 +115,22 @@ asio::awaitable<void> Connection::query_slp() {
     try {
         if (!socket_.is_open()) {
             std::cerr << "WARNING: socket is closed, cannot query." << std::endl;
-            callback_(Outcome{std::unexpect, server_query_.server, "Socket closed."});
-            co_return;
+            co_return Outcome{std::unexpect, server_query_.server, "Socket closed."};
         }
         // Send server-bound packets:
         co_await asio::async_write(socket_, asio::buffer(handshake_packet), asio::use_awaitable);
         co_await asio::async_write(socket_, asio::buffer(status_request_packet), asio::use_awaitable);
 
-        // Receive client-bound packet JSON string.
-        // Send the JSON to the callback.
-        callback_(Result{server_query_.server, co_await read_json_status_response_packet()});
+        // Receive client-bound packet SLP JSON string response, and return it.
+        co_return Result{server_query_.server, co_await read_json_status_response_packet()};
 
     } catch (const asio::system_error &e) {
-        std::cerr << "Error: connection with the MC server failed: " << e.what() << std::endl;
-        throw;
+        std::string err_msg = "connection with the MC server failed: "s + e.what();
+        co_return Outcome{std::unexpect, server_query_.server, err_msg};
     }
 }
 
-asio::awaitable<void> Connection::run() {
+asio::awaitable<Outcome> Connection::query() {
     std::cout << "Called Connection::run()" << std::endl;
 
     // Start the deadline actor. We are setting a global timeout for ALL async operations;
@@ -145,6 +144,6 @@ asio::awaitable<void> Connection::run() {
 
 
     std::cout << "Querying SLP..." << std::endl;
-    co_await query_slp();
-    std::cout << "OK" << std::endl;
+    Outcome res = co_await query_slp();
+    co_return res;
 }

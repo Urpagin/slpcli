@@ -49,20 +49,16 @@ struct ServerQuery {
 
 
 using Outcome = std::expected<Result, ResultErr>;
-using Callback = std::function<void(Outcome)>;
 
 /// @brief Object that manager a singular asynchronous connection to
 /// a Minecraft server.
-class Connection {
+class Connection : std::enable_shared_from_this<Connection> {
 public:
     /// Constructor
-    explicit Connection(asio::io_context &io_context, ServerQuery server, const std::function<void(Outcome)>&);
-
-    /// Reads the JSON status response packet from `socket_`.
-    asio::awaitable<std::string> read_json_status_response_packet();
+    explicit Connection(const asio::any_io_executor &ex, ServerQuery server);
 
     /// Query the Minecraft server.
-    asio::awaitable<void> run();
+    asio::awaitable<Outcome> query();
 
 private:
     /// Information about the Minecraft server.
@@ -77,11 +73,14 @@ private:
     /// Opens the socket, connects it to the Minecraft server.
     asio::awaitable<void> connect();
 
+    /// Reads the JSON status response packet from `socket_`.
+    asio::awaitable<std::string> read_json_status_response_packet();
+
     /// Checks if the deadline (timeout) is expired. If so, close socket.
     void check_deadline();
 
     /// Queries the MC server's SLP.
-    asio::awaitable<void> query_slp();
+    asio::awaitable<Outcome> query_slp();
 };
 
 #endif // CONNECTION_H
