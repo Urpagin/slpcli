@@ -2,12 +2,16 @@
 // Created by Urpagin on 2023-12-01.
 //
 
+// Not using Boost.
+#define ASIO_STANDALONE
+
 #include "../include/slp.h"
 #include <arpa/inet.h>
 
 #include <algorithm>
 #include <array>
 
+#include "DataTypesUtils.h"
 #include <chrono>
 #include <future>
 #include <iostream>
@@ -16,13 +20,12 @@
 #include <utility>
 #include <vector>
 
-#include "DataTypesUtils.h"
-
 // Constructor definition
 slp::slp(const std::string_view server_addr, const uint16_t server_port,
          const int timeout, const int handshake_protocol_version)
     : server_addr(server_addr), server_port(server_port), timeout(timeout),
-      protocol_version(handshake_protocol_version) {}
+      protocol_version(handshake_protocol_version), io_context_{},
+      deadline_{io_context_} {}
 
 /// @brief Builds the Handshake packet.
 std::vector<uint8_t> slp::make_handshake_packet() const {
@@ -141,32 +144,34 @@ std::string slp::read_json_status_response_packet(asio::ip::tcp::socket &sock) {
 
 /// @brief Resolves the address, connect to the server and return the TCP
 /// socket.
-asio::ip::tcp::socket slp::get_conn_socket(asio::io_context &io_context) const {
+asio::ip::tcp::socket slp::get_conn_socket() {
   using asio::ip::tcp;
 
   // Resolve the domain for an actual IPv4 or IPv6 as the TCP protocol works
   // with IPs and not domain names.
-  tcp::resolver resolver(io_context);
-  tcp::socket socket(io_context);
+  tcp::resolver resolver(io_context_);
+  tcp::socket socket(io_context_);
   asio::connect(socket, resolver.resolve(this->server_addr,
                                          std::to_string(this->server_port)));
 
   return std::move(socket);
 }
 
+
 /// @brief Queries the Minecraft server using the Status List Ping protocol and
 /// returns the JSON response.
 /// @returns The JSON string of the Status Response packet.
 /// @throws asio::system_error For any errors encountered.
-std::string slp::_query_slp() const {
+std::string slp::_query_slp() {
   // 'Build Handshake' and 'Status Request' packets.
   auto handshake_packet = make_handshake_packet();
   auto status_request_packet = make_status_request_packet();
 
-  asio::io_context io_context{};
-  try {
+  deadline_.async_wait([]() {})
+
+      try {
     // Init socket & connect to MC server.
-    auto socket = get_conn_socket(io_context);
+    auto socket = get_conn_socket();
 
     // Send server-bound packets:
     asio::write(socket, asio::buffer(handshake_packet));
@@ -188,7 +193,7 @@ std::string slp::_query_slp() const {
 /// @throws asio::system_error For any errors encountered.
 /// @details Small wrapper over the real function to add a timeout.
 /// Source: https://stackoverflow.com/a/51850018
-std::string slp::query_slp() const {
+std::string slp::query_slp() {
   std::promise<std::string> promise;
   std::future<std::string> fut = promise.get_future();
 

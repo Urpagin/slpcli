@@ -1,5 +1,9 @@
 add_library(slp STATIC src/slp.cpp src/DataTypesUtils.cpp
-        include/slp.h)
+        include/slp.h
+        src/Connection.cpp
+        src/Connection.h
+        src/Dispatcher.cpp
+        src/Dispatcher.h)
 target_compile_features(slp PUBLIC cxx_std_20)
 
 set(CMAKE_CXX_STANDARD 23)

@@ -52,7 +52,7 @@ int main(const int argc, char *argv[]) {
   std::cout << "Querying '" << addr << ":" << port << "'...\n\n" << std::endl;
 
   try {
-    const slp serv{addr, port, timeout};
+    slp serv{addr, port, timeout};
     const std::string slp_response{serv.query_slp()};
 
     // Print JSON
