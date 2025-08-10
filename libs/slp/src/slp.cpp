@@ -13,7 +13,7 @@
 struct slp::Impl {
     SlpOptions opts;
     Dispatcher disp;
-    Impl(const SlpOptions &opt, Callback cb) : opts(opt), disp(std::move(cb), opts.worker_thread_count) {}
+    Impl(const SlpOptions &opt, Callback cb) : opts(opt), disp(std::move(cb), opts) {}
 };
 
 slp::slp(SlpOptions opt, Callback cb) : p_(std::make_unique<Impl>(opt, std::move(cb))) {}

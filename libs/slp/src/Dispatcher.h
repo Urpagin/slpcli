@@ -14,7 +14,7 @@
 
 // TODO: Race I/O instead of `steady_timer`. The winner cancels the loser. Simpler.
 
-// TODO: enforce an inflight cap. (isnt this the semaphore already?)
+// TODO: enforce an inflight cap. (isn't this the semaphore already?)
 
 class Dispatcher {
     /// I/O Interface with the kernel.
@@ -61,7 +61,7 @@ class Dispatcher {
     ///     - If a default is passed, it will be returned;
     ///     - If no default passed, it will try to get the CPU thread-count;
     ///     - If error getting the CPU thread-count, use DEFAULT_WORKER_COUNT.
-    static size_t get_worker_count(std::optional<size_t>);
+    static size_t get_worker_count(size_t def);
 
 
     /// Coroutine; queries a Minecraft server.
@@ -73,7 +73,7 @@ public:
     ///
     /// The callback function.
     /// The I/O executor.
-    Dispatcher(Callback callback, SlpOptions opts);
+    Dispatcher(Callback callback, const SlpOptions &opts);
 
 
     /// @brief Destructor - Calls seal() and finish().

@@ -11,9 +11,10 @@
 #include <utility>
 
 
-Dispatcher::Dispatcher(Callback callback, SlpOptions opts) :
+Dispatcher::Dispatcher(Callback callback, const SlpOptions &opts) :
     ioc_(asio::io_context{}), ex_guard_(ioc_.get_executor()), cb_(std::move(callback)),
-    semaphore_(ioc_.get_executor(), DEFAULT_SEM_LIMIT), worker_count_(get_worker_count(worker_thread_count)) {
+    semaphore_(ioc_.get_executor(), static_cast<int>(opts.semaphore_count)),
+    worker_count_(get_worker_count(opts.worker_thread_count)) {
 
     for (size_t _{0}; _ < worker_count_; ++_) {
         workers.emplace_back([this]() { ioc_.run(); });
@@ -23,13 +24,9 @@ Dispatcher::Dispatcher(Callback callback, SlpOptions opts) :
 }
 
 
-size_t Dispatcher::get_worker_count(const std::optional<size_t> def) {
-    if (def)
-        return *def;
-
-    if (const int sys_c = std::thread::hardware_concurrency() > 0)
-        return static_cast<size_t>(sys_c);
-
+size_t Dispatcher::get_worker_count(const size_t def) {
+    if (def > 0)
+        return def;
     return DEFAULT_WORKER_COUNT;
 }
 asio::awaitable<void> Dispatcher::query_one(ServerQuery q) {

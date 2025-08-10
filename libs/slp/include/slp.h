@@ -42,9 +42,9 @@ struct ServerQuery {
     /// The server to query.
     McServer server;
 
-    /// The timeout in seconds for the duration of the whole operation
-    /// from connect to reads & writes.
-    std::chrono::milliseconds timeout;
+    /// Controls the total time the whole query takes at max. DNS query, connection, reads & writes.
+    /// If the query exceeds the timeout, it is dropped.
+    std::chrono::milliseconds timeout{10000LL}; // 10s default
 
     /// The protocol version included in the Handshake packet.
     /// Default to `-1`. Should work, if not, set something else.
@@ -64,9 +64,6 @@ struct SlpOptions {
     size_t worker_thread_count{std::thread::hardware_concurrency()};
     /// Controls the number of threads running, each calling the callback function with the MC servers responses.
     size_t callback_worker_threads{1};
-    /// Controls the total time the whole query takes at max. DNS query, connection, reads & writes.
-    /// If the query exceeds the timeout, it is dropped.
-    std::chrono::milliseconds timeout;
 };
 
 /// @brief Query the SLP protocol on Minecraft: Java Edition servers.
@@ -87,9 +84,10 @@ public:
     void seal() const;
     void finish() const;
 
-    // Sugar:
+    // TODO: Add sugar:
     // Reads servers from an istream, streams results to a Callback, then returns.
     // void run_streaming(std::istream& in, const Client::Options&, Callback cb);
+    // + add range && std::span support.
 
 private:
     // We follow the PIMPL pattern.

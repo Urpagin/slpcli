@@ -9,6 +9,7 @@
 #include <asio/ip/tcp.hpp>
 #include <expected>
 
+#include "slp.h"
 
 
 /// @brief Object that manager a singular asynchronous connection to

@@ -135,7 +135,7 @@ asio::awaitable<Outcome> Connection::query() {
 
     // Start the deadline actor. We are setting a global timeout for ALL async operations;
     // not prior to each async operations.
-    deadline_.expires_after(std::chrono::seconds(server_query_.timeout_s));
+    deadline_.expires_after(server_query_.timeout);
     deadline_.async_wait([this](const asio::error_code &) { check_deadline(); });
 
     std::cout << "Connecting to MC server..." << std::endl;
