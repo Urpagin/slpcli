@@ -7,7 +7,10 @@
 🔧 *A naive implementation of the Server List Ping (SLP) protocol in C++
 using [non-boost Asio](https://think-async.com/Asio/).*
 
-📦 **Available on the AUR:** [`slpcli-git`](https://aur.archlinux.org/packages/slpcli-git)
+📦 **Available on the AUR**  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[![AUR version](https://img.shields.io/aur/version/slpcli-git?logo=archlinux&label=slpcli-git&style=flat)](https://aur.archlinux.org/packages/slpcli-git)
+
+⭐ Enjoying this repo? A star would mean a lot.
 
 ---
 
@@ -254,6 +257,11 @@ limitation is intentional and acceptable for typical usage scenarios.
 * Add thread-pool + async requests to check text file for online MC servers.
 
 ---
+
+## Why not Rust?
+
+I objectively think Rust would be better for this project. But... I also think C++ is awesome and deserves some love, it's also funny how easily I can shoot myself in the foot - thrilling.
+
 
 ## 📚 References & Acknowledgments
 
