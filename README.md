@@ -21,19 +21,19 @@ using [non-boost Asio](https://think-async.com/Asio/).*
 
 
 POSITIONALS:
-  addr TEXT REQUIRED          Server address with optional ":port". 
-  port UINT                   Port of the Minecraft server (default 25565). 
+  addr TEXT REQUIRED          Server address with optional ":port".
+  port UINT                   Port of the Minecraft server (default 25565).
 
 OPTIONS:
-  -h,     --help              Print this help message and exit 
-  -s,     --silent            Only prints the JSON or an empty string if error. 
-  -a,     --address TEXT REQUIRED 
-                              Server address with optional ":port". 
-  -p,     --port UINT         Port of the Minecraft server (default 25565). 
-  -t,     --timeout INT       The timeout in seconds at which the query is dropped 
-          --protocol-version INT 
-                              The protocol version that the client plans on using to connect to 
-                              the server. Don't change if you don't know what it means. 
+  -h,     --help              Print this help message and exit
+  -s,     --silent            Only prints the JSON or an empty string if error.
+  -a,     --address TEXT REQUIRED
+                              Server address with optional ":port".
+  -p,     --port UINT         Port of the Minecraft server (default 25565).
+  -t,     --timeout INT       The timeout in seconds at which the query is dropped
+          --protocol-version INT
+                              The protocol version that the client plans on using to connect to
+                              the server. Do not change if you do not know what it means.
 ```
 
 ## 🛠️ Examples
@@ -105,27 +105,24 @@ Save favicon as an image file:
 
 ### 🤫 Quiet Mode
 
-The `-s` or `--silent` option suppresses diagnostic messages, outputting only the raw JSON payload or an empty string
-upon error. Useful for shell pipelines.
+The `-s` or `--silent` option suppresses diagnostic messages, outputting only the raw JSON payload or an empty string upon error. Useful for shell pipelines.
 
 ---
 
 ## 📦 Installation
 
 > [!WARNING]
-> The project is currently **only** available on Arch Linux's User Repository (AUR). On other distrubutions and OSs
-> you'll have to manually build it or download a binary in the [Releases](https://github.com/Urpagin/slpcli/releases).
+> The project is currently **only** available on Arch Linux's User Repository (AUR). On other distributions and OSes you will have to build it manually or download a binary from the [Releases](https://github.com/Urpagin/slpcli/releases).
 
-You have two main ways to install `slpcli` on Arch Linux
+You have two main ways to install `slpcli` on Arch Linux:
 
-1. Use your favorite AUR helper like [`yay`](https://github.com/Jguer/yay) or [
-   `paru`](https://github.com/Morganamilo/paru):
+1. Use your favorite AUR helper like [`yay`](https://github.com/Jguer/yay) or [`paru`](https://github.com/Morganamilo/paru):
 
 ```bash
 yay -S slpcli-git
 ```
 
-2. Install directly from the `PKGBUILD` file
+2. Install directly from the `PKGBUILD` file:
 
 ```bash
 sudo pacman -S --needed git base-devel
@@ -136,7 +133,7 @@ makepkg -si
 
 ## 🏗️ Building
 
-Use the provided `run_debug.sh` script or build manually:
+Use the provided `run_debug.sh` script or build manually.
 
 ### Manual Build
 
@@ -152,18 +149,18 @@ make -j$(nproc)
 
 ## 💻 Compatibility
 
-### Platforms
+### Platforms 🌐
 
-🌐 *Cross-platform enabled thanks to Asio*
+*Cross platform thanks to Asio*
 
 | OS      | Compatibility |
-|---------|---------------|
+| ------- | ------------- |
 | Linux   | ✅ YES         |
 | macOS   | ✅ YES         |
 | Windows | ✅ YES         |
 
 > [!NOTE]
-> ⚠️ Manual build required for non-Linux/macOS platforms.
+> Manual build required on macOS and Windows. On Arch Linux you can use the AUR package.
 
 ### 📐 C++ Version
 
@@ -242,26 +239,22 @@ make -j$(nproc)
 
 ## ⚠️ Known Issues
 
-### 🔢 VarInt Handling
+### 🔢 VarInt handling
 
-VarInt values are stored as `int` (32 bits), limiting full protocol compliance for VarInts larger than 35 bits. This
-limitation is intentional and acceptable for typical usage scenarios.
+We are storing `VarInt`s as a 32-bit signed integer, however, a `VarInt` is defined in the protocol with a maximum of 5 bytes, which is 35 bits.
+I think this means I am not spec-compliant, but with the packets we're handling, I don't think it matters.
 
 ## TODO
 
-* Remove the small overhead of launching a new thread with `std::thread` by using an Asio-native solution (
-  see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)) / [Source Code](https://github.com/chriskohlhoff/asio/tree/master/asio/src/examples/cpp11/timeouts).
-
+* Remove the small overhead of launching a new thread with `std::thread` by using an Asio-native solution (see [Timeouts](https://think-async.com/Asio/asio-1.30.2/doc/asio/examples/cpp11_examples.html)) / [Source Code](https://github.com/chriskohlhoff/asio/tree/master/asio/src/examples/cpp11/timeouts).
 * Add support for Bedrock Edition?
-
-* Add thread-pool + async requests to check text file for online MC servers.
+* Add a thread pool and async requests to check a text file for online MC servers.
 
 ---
 
 ## Why not Rust?
 
-I objectively think Rust would be better for this project. But... I also think C++ is awesome and deserves some love, it's also funny how easily I can shoot myself in the foot - thrilling.
-
+I objectively think Rust would be better for this project. But I also think C++ is awesome and deserves some love, it is also funny how easily I can shoot myself in the foot, thrilling.
 
 ## 📚 References & Acknowledgments
 
