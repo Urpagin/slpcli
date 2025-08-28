@@ -40,9 +40,6 @@ class Dispatcher {
     /// Limits the number of tasks at one time.
     sam::semaphore semaphore_;
 
-    // TODO: DO I NEED THIS?
-    /// Number of tasks? currently running.
-    std::atomic<size_t> in_flight_{0};
 
     /// Whether the seal() method has been called. If so, the submit() method becomes a no-op.
     std::atomic<bool> is_sealed{false};
@@ -77,20 +74,14 @@ public:
 
 
     /// @brief Destructor - Calls seal() and finish().
-    ~Dispatcher() {
-        seal();
-        finish();
-    }
+    ~Dispatcher() { seal_and_wait(); }
 
 
     /// @brief Submits a single server into the sink.
     bool submit(ServerQuery);
 
-    /// @brief Seals the sink, not allowing any more servers to be queued up.
-    void seal() const;
-
-    /// @brief BLOCKING - waits for all threads & coroutines to rejoin & return.
-    void finish() const;
+    /// @brief BLOCKING -  Seals the sink, not allowing any more servers to be queued up and waits for all workers to be done.
+    void seal_and_wait();
 
 
     // TODO: submit_range(R&& range) that just loops and calls submit per element.

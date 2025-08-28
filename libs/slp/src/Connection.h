@@ -27,8 +27,6 @@ private:
     ServerQuery server_query_;
     /// Socket to the Minecraft server.
     asio::ip::tcp::socket socket_;
-    /// Timeout the connection if too long.
-    asio::steady_timer deadline_;
     /// Callback that runs when a server responds.
     std::function<void(Outcome)> callback_;
 
@@ -37,9 +35,6 @@ private:
 
     /// Reads the JSON status response packet from `socket_`.
     asio::awaitable<std::string> read_json_status_response_packet();
-
-    /// Checks if the deadline (timeout) is expired. If so, close socket.
-    void check_deadline();
 
     /// Queries the MC server's SLP.
     asio::awaitable<Outcome> query_slp();

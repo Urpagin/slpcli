@@ -20,8 +20,7 @@ slp::slp(SlpOptions opt, Callback cb) : p_(std::make_unique<Impl>(opt, std::move
 
 slp::~slp() {
     try {
-        p_->disp.seal();
-        p_->disp.finish();
+        p_->disp.seal_and_wait();
     } catch (const std::exception &e) {
         std::cerr << "Error: failed to destruct Slp object: " << e.what() << std::endl;
     } catch (...) {
@@ -31,6 +30,5 @@ slp::~slp() {
 
 void slp::submit(ServerQuery q) const { p_->disp.submit(std::move(q)); }
 
-void slp::seal() const { p_->disp.seal(); }
 
-void slp::finish() const { p_->disp.finish(); }
+void slp::seal_and_wait() const { p_->disp.seal_and_wait(); }

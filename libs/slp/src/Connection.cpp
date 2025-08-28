@@ -10,8 +10,7 @@
 
 using namespace std::string_literals;
 
-Connection::Connection(const asio::any_io_executor &ex, ServerQuery server) :
-    server_query_{std::move(server)}, socket_(ex), deadline_(ex) {}
+Connection::Connection(const asio::any_io_executor &ex, ServerQuery server) : server_query_{std::move(server)}, socket_(ex) {}
 
 
 /// @brief Read the socket for the Status Response packet and returns the bytes
@@ -49,7 +48,12 @@ asio::awaitable<std::string> Connection::read_json_status_response_packet() {
 
     try {
         // Read the JSON string into memory.
-        asio::read(socket_, asio::buffer(buffer.data(), json_size));
+        if (auto [ec, n] = co_await asio::async_read(socket_, asio::buffer(buffer.data(), json_size),
+                                                     asio::as_tuple(asio::use_awaitable));
+            ec) {
+            throw asio::system_error(ec);
+        }
+
     } catch (const asio::system_error &e) {
         if (e.code() == asio::error::eof) {
             std::cerr << "Error: failed to read Status Response packet JSON: EOF" << std::endl;
@@ -78,27 +82,9 @@ asio::awaitable<void> Connection::connect() {
 
     // connect with a completion token
     co_await asio::async_connect(socket_, endpoints, asio::use_awaitable);
+    socket_.set_option(tcp::no_delay(true));
 
     co_return;
-}
-
-
-/// Function inspired from the docs.
-void Connection::check_deadline() {
-    // Check whether the deadline has passed. We compare the deadline against
-    // the current time since a new asynchronous operation may have moved the
-    // deadline before this actor had a chance to run.
-    if (deadline_.expiry() <= asio::steady_timer::clock_type::now()) {
-        socket_.close();
-
-        // There is no longer an active deadline. The expiry is set to the
-        // maximum time point so that the actor takes no action until a new
-        // deadline is set.
-        deadline_.expires_at(asio::steady_timer::time_point::max());
-    }
-
-    // Put the actor back to sleep.
-    deadline_.async_wait([this](const asio::error_code &) { check_deadline(); });
 }
 
 
@@ -130,13 +116,9 @@ asio::awaitable<Outcome> Connection::query_slp() {
     }
 }
 
+
 asio::awaitable<Outcome> Connection::query() {
     std::cout << "Called Connection::run()" << std::endl;
-
-    // Start the deadline actor. We are setting a global timeout for ALL async operations;
-    // not prior to each async operations.
-    deadline_.expires_after(server_query_.timeout);
-    deadline_.async_wait([this](const asio::error_code &) { check_deadline(); });
 
     std::cout << "Connecting to MC server..." << std::endl;
     co_await connect();

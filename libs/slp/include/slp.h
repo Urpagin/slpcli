@@ -13,6 +13,13 @@
 #include <thread>
 
 
+#include "../src/logger.hpp"
+
+using logger::err;
+using logger::info;
+using logger::log_end;
+using logger::log_start;
+
 /// @brief Represents a Minecraft server.
 struct McServer {
     /// Address of the Minecraft server.
@@ -81,9 +88,16 @@ public:
     slp &operator=(slp &&) noexcept = default;
 
     void submit(ServerQuery q) const;
-    void seal() const;
-    void finish() const;
+    void seal_and_wait() const;
 
+    // TODO: Add sugar:
+    // TODO: Add sugar:
+    // TODO: Add sugar:
+    // TODO: Add sugar:
+    // TODO: Add sugar:
+    // TODO: Add sugar:
+    // TODO: Add sugar:
+    // TODO: Add sugar:
     // TODO: Add sugar:
     // Reads servers from an istream, streams results to a Callback, then returns.
     // void run_streaming(std::istream& in, const Client::Options&, Callback cb);

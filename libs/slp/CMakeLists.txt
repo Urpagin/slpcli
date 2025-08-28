@@ -4,6 +4,7 @@ add_library(slp STATIC src/slp.cpp src/DataTypesUtils.cpp
         src/Connection.h
         src/Dispatcher.cpp
         src/Dispatcher.h
+        src/logger.hpp
 )
 target_compile_features(slp PUBLIC cxx_std_23)
 

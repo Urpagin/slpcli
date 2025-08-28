@@ -51,7 +51,9 @@ asio::awaitable<int> DataTypesUtils::read_varint(asio::ip::tcp::socket &sock) {
 
     for (size_t i{0}; i < 5; ++i) {
         // Throws exception if error or EOF.
-        asio::read(sock, asio::buffer(&byte, 1));
+        // asio::read(sock, asio::buffer(&byte, 1));
+        if (auto [ec, read] = co_await asio::async_read(sock, asio::buffer(&byte, 1), asio::as_tuple(asio::use_awaitable)); ec)
+            throw asio::system_error(ec);
 
         // Must be before the check for the zero-continuation bit.
         // Add the data bits to result.
