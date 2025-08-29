@@ -8,6 +8,7 @@
 #include <utility>
 
 #include <string_view>
+#include "logger.hpp"
 #include "slp.h"
 #include "slpcliConfig.h"
 
@@ -21,27 +22,25 @@ constexpr const char *DEV_NULL = "NUL";
 #include <unistd.h> // dup, dup2, close
 constexpr auto DEV_NULL = "/dev/null";
 #endif
-// #include "logger"
 
 
 #include <algorithm>
 #include <cctype>
 #include <chrono>
 #include <fstream>
-#include <iostream>
-#include <string>
-#include <utility>
 #include <vector>
+
 using namespace std::chrono_literals;
+using namespace logger;
 
+// TODO: USE slp/src/logger.hpp
+// TODO: USE slp/src/logger.hpp
+// TODO: USE slp/src/logger.hpp
+// TODO: USE slp/src/logger.hpp
+// TODO: USE slp/src/logger.hpp
+// TODO: USE slp/src/logger.hpp
+// TODO: USE slp/src/logger.hpp
 
-// TODO: USE slp/src/logger.hpp
-// TODO: USE slp/src/logger.hpp
-// TODO: USE slp/src/logger.hpp
-// TODO: USE slp/src/logger.hpp
-// TODO: USE slp/src/logger.hpp
-// TODO: USE slp/src/logger.hpp
-// TODO: USE slp/src/logger.hpp
 
 /// 100% ChatGPT.
 void quick_and_dirty_run() {
@@ -137,23 +136,14 @@ void quick_and_dirty_run() {
     serv.seal_and_wait();
 }
 
-void ping_one() {
-    // Construct the client with defaults; print JSON for successes only.
-    const slp serv{SlpOptions{}, [](const Outcome &out) {
-                       if (out.has_value()) {
-                           std::cout << out->json << std::endl;
-                       }
-                   }};
-
-    serv.submit(ServerQuery{.server = McServer{"blog.urpagin.net", 25565}, .timeout = 3s});
-    serv.seal_and_wait();
-}
+/// @brief Makes one SLP query to a server.
+void query_one(const slp &sink, ServerQuery query) { sink.submit(std::move(query)); }
 
 
-namespace detail {
+namespace shush_detail {
     inline int saved_out = -1;
     inline int saved_err = -1;
-} // namespace detail
+} // namespace shush_detail
 
 void disable_output();
 void enable_output();
@@ -169,27 +159,54 @@ struct AppOptions {
 };
 AppOptions parse_args(int, char **);
 
+// The function that gets called each time an SLP response is received.
+// This callback is called inside a separate thread pool so as not to
+// disturb the workers.
+void resp_callback(const Outcome &resp) {
+    if (resp.has_value()) {
+        std::cout << resp->json << std::endl;
+    }
+}
+
 int main(const int argc, char *argv[]) {
-    // This syntax is so cool
-    const auto [is_quiet, addr, port, timeout, protocol_version] = parse_args(argc, argv);
+    log_start();
 
-    if (is_quiet)
+    // This syntax is very cool!
+    auto [is_quiet, addr, port, timeout, protocol_version] = parse_args(argc, argv);
+
+    // Disable logging if desired.
+    if (is_quiet) {
+        log_set_silent(is_quiet);
+        // Safety measure, disable ALL outputs.
         disable_output();
+    }
 
-    std::cout << "Querying '" << addr << ":" << port << "'...\n\n" << std::endl;
+    // Make and configure our sink.
+    const SlpOptions opts{
+            .semaphore_count = 1'000,
+            .callback_worker_threads = std::thread::hardware_concurrency(),
+    };
+    const slp sink(opts, resp_callback);
 
     try {
+        // In the case of ONE query:
+        info("Querying '", addr, ":", port, "'...\n\n");
+        ServerQuery query{
+                .server = McServer{std::move(addr), port},
+                .timeout = std::chrono::seconds(static_cast<long>(timeout)),
+                .protocol_version = protocol_version,
+        };
 
-        quick_and_dirty_run();
-        // ping_one();
-        std::cout << "hi" << std::endl;
+        query_one(sink, std::move(query));
 
-        // Print JSON
     } catch (const std::exception &e) {
-        std::cerr << "Error: failed to query SLP: " << e.what() << std::endl;
+        err("Failed to query SLP: ", e.what());
         std::exit(-1);
     }
 
+    // seal the sink; wait for all queries to be done.
+    sink.seal_and_wait();
+    log_end();
     return 0;
 }
 
@@ -264,8 +281,8 @@ std::string get_version() { return std::to_string(SLPCLI_VERSION_MAJOR) + "." + 
 /// @brief Disables std{out,err}
 void disable_output() {
     // 1. Save originals
-    detail::saved_out = dup(fileno(stdout));
-    detail::saved_err = dup(fileno(stderr));
+    shush_detail::saved_out = dup(fileno(stdout));
+    shush_detail::saved_err = dup(fileno(stderr));
 
     // 2. Redirect to null device
     (void) freopen(DEV_NULL, "w", stdout);
@@ -274,17 +291,17 @@ void disable_output() {
 
 /// @brief Enables std{out,err}
 void enable_output() {
-    if (detail::saved_out == -1 || detail::saved_err == -1)
+    if (shush_detail::saved_out == -1 || shush_detail::saved_err == -1)
         return; // nothing to restore
 
     fflush(stdout);
     fflush(stderr);
 
-    dup2(detail::saved_out, fileno(stdout));
-    dup2(detail::saved_err, fileno(stderr));
+    dup2(shush_detail::saved_out, fileno(stdout));
+    dup2(shush_detail::saved_err, fileno(stderr));
 
-    close(detail::saved_out);
-    close(detail::saved_err);
+    close(shush_detail::saved_out);
+    close(shush_detail::saved_err);
 
-    detail::saved_out = detail::saved_err = -1;
+    shush_detail::saved_out = shush_detail::saved_err = -1;
 }

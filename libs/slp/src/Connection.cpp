@@ -32,9 +32,9 @@ asio::awaitable<std::string> Connection::read_json_status_response_packet() {
         json_size = co_await dtu::read_varint(socket_);
     } catch (const asio::system_error &e) {
         if (e.code() == asio::error::eof) {
-            std::cerr << "Error: failed to read Status Response packet JSON size: EOF" << std::endl;
+            err("Failed to read Status Response packet JSON size: EOF");
         } else {
-            std::cerr << "Error: failed to read Status Response packet JSON size: " << e.what() << std::endl;
+            err("Failed to read Status Response packet JSON size: ", e.what());
         }
         throw std::runtime_error("Failed to read the Status Response packet JSON size");
     }
@@ -56,9 +56,9 @@ asio::awaitable<std::string> Connection::read_json_status_response_packet() {
 
     } catch (const asio::system_error &e) {
         if (e.code() == asio::error::eof) {
-            std::cerr << "Error: failed to read Status Response packet JSON: EOF" << std::endl;
+            err("Failed to read Status Response packet JSON: EOF");
         } else {
-            std::cerr << "Error: failed to read Status Response packet JSON size: " << e.what() << std::endl;
+            err("Failed to read Status Response packet JSON size: ", e.what());
         }
         throw std::runtime_error("Failed to read the Status Response packet JSON size");
     }
@@ -75,8 +75,7 @@ asio::awaitable<void> Connection::connect() {
     auto [ec1, endpoints] = co_await resolver.async_resolve(
             server_query_.server.address, std::to_string(server_query_.server.port), asio::as_tuple(asio::use_awaitable));
     if (ec1) {
-        std::cerr << "ERROR: failed to resolve the address: " << server_query_.server.address << ":" << server_query_.server.port
-                  << std::endl;
+        err("Failed to resolve the address: ", server_query_.server.address, ':', server_query_.server.port);
         co_return;
     }
 
@@ -100,7 +99,7 @@ asio::awaitable<Outcome> Connection::query_slp() {
 
     try {
         if (!socket_.is_open()) {
-            std::cerr << "WARNING: socket is closed, cannot query." << std::endl;
+            err("Socket is closed, cannot query");
             co_return Outcome{std::unexpect, server_query_.server, "Socket closed."};
         }
         // Send server-bound packets:
@@ -118,15 +117,12 @@ asio::awaitable<Outcome> Connection::query_slp() {
 
 
 asio::awaitable<Outcome> Connection::query() {
-    std::cout << "Called Connection::run()" << std::endl;
-
-    std::cout << "Connecting to MC server..." << std::endl;
+    info("Connecting to the Minecraft server...");
     co_await connect();
-    std::cout << "OK" << std::endl;
+    info("Connected successfully!");
 
 
-    std::cout << "Querying SLP..." << std::endl;
-
+    info("Querying SLP...");
     Outcome res = co_await query_slp();
     co_return res;
 }

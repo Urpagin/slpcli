@@ -13,7 +13,7 @@
 #include <thread>
 
 
-#include "../src/logger.hpp"
+#include "logger.hpp"
 
 using logger::err;
 using logger::info;

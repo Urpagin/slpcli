@@ -10,6 +10,7 @@
 
 #include "Dispatcher.h"
 
+
 struct slp::Impl {
     SlpOptions opts;
     Dispatcher disp;
@@ -22,9 +23,9 @@ slp::~slp() {
     try {
         p_->disp.seal_and_wait();
     } catch (const std::exception &e) {
-        std::cerr << "Error: failed to destruct Slp object: " << e.what() << std::endl;
+        err("Failed to destruct Slp object: ", e.what());
     } catch (...) {
-        std::cerr << "Error: failed to destruct Slp object, unknown exception" << std::endl;
+        err("Failed to destruct Slp object, unknown exception");
     }
 }
 

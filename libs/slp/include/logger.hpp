@@ -21,6 +21,9 @@
 namespace logger::detail {
     using item = std::tuple<std::string, bool>;
 
+    // if true, does not print anything.
+    static std::atomic<bool> is_silent{false};
+
     static std::condition_variable cv;
     static std::queue<item> log_q;
     static std::mutex log_q_guard{};
@@ -118,10 +121,33 @@ namespace logger {
         d::worker.join();
     }
 
+    /// @brief Changes the detail::is_silent flag to the arg.
+    static void log_set_silent(const bool is_silent) { d::is_silent = is_silent; }
+
 
     /// @brief Logs a message with a blue colour, INFO mode. To stdout.
-    static void info(const std::string_view msg) { d::log(msg, false); }
+    /// Behavior: Appends a newline after argument expansions.
+    /// Usage: info(a, b, c, d) E.g., err("hello", "world", a_var)
+    template<class... Ts>
+    static void info(const Ts &...xs) {
+        if (d::is_silent)
+            return;
+
+        std::ostringstream oss;
+        (oss << ... << xs);
+        d::log(oss.view(), false);
+    }
 
     /// @brief Logs a message with a red colour, ERR mode. To stdout.
-    static void err(const std::string_view msg) { d::log(msg, true); }
+    /// Behavior: Appends a newline after argument expansions.
+    /// Usage: err(a, b, c, d) E.g., err("hello", "world", a_var)
+    template<class... Ts>
+    static void err(const Ts &...xs) {
+        if (d::is_silent)
+            return;
+
+        std::ostringstream oss;
+        (oss << ... << xs);
+        d::log(oss.view(), true);
+    }
 } // namespace logger

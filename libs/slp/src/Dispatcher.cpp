@@ -57,11 +57,11 @@ asio::awaitable<void> Dispatcher::query_one(ServerQuery q) {
             if (v.index() == 0) {
                 cb(std::move(std::get<0>(v)));
             } else {
-                std::cerr << "Query took longer than timeout; cancelled." << std::endl;
+                err("Query took longer than timeout; cancelled.");
                 cb(Outcome{std::unexpect});
             }
         } catch (const std::exception &e) {
-            std::cerr << "Error: exception while querying: " << e.what() << std::endl;
+            err("Exception while querying: ", e.what());
         }
     });
 
@@ -73,7 +73,6 @@ static int c = 0;
 /// @brief Submits a task for execution only if the Dispatch is NOT sealed.
 /// @returns true for OK, false for sealed.
 bool Dispatcher::submit(ServerQuery query) {
-    std::cout << "submitting: " << c << std::endl;
     ++c;
     if (is_sealed.load(std::memory_order_acquire))
         return false;
@@ -107,11 +106,11 @@ bool Dispatcher::submit(ServerQuery query) {
 
 /// @brief Effectively makes submit() a no-op; closing the sink and waits for all workers to finish.
 void Dispatcher::seal_and_wait() {
+    info("Sealing and waiting...");
     // We cannot safely call this function more than once, since the workers are already being joined.
     if (is_sealed.load())
         return;
 
-    std::cout << "seal_and_wait()\n";
     // Do not keep the io_context alive if all coroutines are done.
     ex_guard_.reset();
 
@@ -119,4 +118,8 @@ void Dispatcher::seal_and_wait() {
     for (auto &w: this->workers) {
         w.join();
     }
+
+    // Explicitly wait for all the callbacks to be called.
+    cb_pool.join();
+    info("Wait done; all queries done; all callbacks done.");
 }
