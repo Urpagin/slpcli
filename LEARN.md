@@ -53,18 +53,20 @@ I personally chose C++ just because it's freaking cool! And as I say in the `REA
 notice it! And that's the beauty of it.
 
 
-## More Information / More In-depth Walkthrough
+## More Information - Walkthrough
 
-I had actually decided to write a blog post to explain how I did it. If you care to read it, it's at this address:
+This project, slpcli, is taking the stead of a Notchian **client**. But, you may want to see what's on the opposite end, being the **server**:
+
+I wrote this blog a while back that explains the motives and how to implement a **server-side** SLP protocol. If you're curious, here's the link:
 
 https://blog.urpagin.net/coding-a-minecraft-honeypot/
 
 
 ## Afterwords
 
-If you do decide to attempt this challenging, or trivial depending on your current level.
+If you do decide to attempt this project, which is challenging or trivial depending your current understanding of things.
 
-I wish you happy coding!
+I regardless, wish you happy coding!
 
 Best of luck!!
 Urpagin.
