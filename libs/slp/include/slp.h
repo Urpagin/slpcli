@@ -44,7 +44,7 @@ struct ResultErr {
     std::string message;
 };
 
-/// @brief The info that are required to query a Minecraft server.
+/// @brief The date that is required to query a Minecraft server.
 struct ServerQuery {
     /// The server to query.
     McServer server;
@@ -60,7 +60,7 @@ struct ServerQuery {
 
 /// Response type when querying a server.
 using Outcome = std::expected<Result, ResultErr>;
-/// Callback function type that's called each server query.
+/// Callback function type that's called at each server query.
 using Callback = std::function<void(Outcome)>;
 
 /// Options for the dispatcher.
@@ -70,6 +70,7 @@ struct SlpOptions {
     /// Controls the number of threads running, each querying servers.
     size_t worker_thread_count{std::thread::hardware_concurrency()};
     /// Controls the number of threads running, each calling the callback function with the MC servers responses.
+    /// In other words, the number of threads that call the call-site-provided callback function (I think).
     size_t callback_worker_threads{1};
 };
 
@@ -81,7 +82,7 @@ public:
     explicit slp(SlpOptions, Callback);
     ~slp();
 
-    // Copy & Move constructors. (Black magic for now)
+    // Copy & Move constructors. (Mostly black magic for now)
     slp(const slp &) = delete;
     slp &operator=(const slp &) = delete;
     slp(slp &&) noexcept = default;

@@ -33,11 +33,11 @@ class Dispatcher {
     /// Callback that runs when a server responds.
     Callback cb_;
 
-    /// Thread pool that will call the callback on other threads so that the workers
+    /// Thread pool that will call ("will call"? did I mean "will be called on/in"?) the callback on other threads so that the workers
     /// aren't waiting for the callback to finish.
     asio::thread_pool cb_pool{DEFAULT_CALLBACK_EX_THREADS};
 
-    /// Limits the number of tasks at one time.
+    /// Limits the number of async task at a time.
     sam::semaphore semaphore_;
 
 
@@ -73,7 +73,7 @@ public:
     Dispatcher(Callback callback, const SlpOptions &opts);
 
 
-    /// @brief Destructor - Calls seal() and finish().
+    /// @brief Destructor - Calls seal() and finish(). Now, merged together in the seal_and_wait() func.
     ~Dispatcher() { seal_and_wait(); }
 
 

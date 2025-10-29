@@ -32,7 +32,6 @@ size_t Dispatcher::get_worker_count(const size_t def) {
     return DEFAULT_WORKER_COUNT;
 }
 asio::awaitable<void> Dispatcher::query_one(ServerQuery q) {
-    // TODO: right place to add a timer, and race it with I/O.
 
     // Set up the timer. Cancels the WHOLE SLP operation if it wins against it.
     asio::steady_timer timer(ioc_.get_executor());
@@ -69,11 +68,11 @@ asio::awaitable<void> Dispatcher::query_one(ServerQuery q) {
     co_return;
 }
 
-static int c = 0;
+static size_t submitted_count = 0;
 /// @brief Submits a task for execution only if the Dispatch is NOT sealed.
-/// @returns true for OK, false for sealed.
+/// @returns true for OK, false for sealed (or otherwise?)
 bool Dispatcher::submit(ServerQuery query) {
-    ++c;
+    ++submitted_count;
     if (is_sealed.load(std::memory_order_acquire))
         return false;
 
@@ -99,7 +98,8 @@ bool Dispatcher::submit(ServerQuery query) {
             asio::detached);
 
     // TODO: constant return val.
-    // What did I mean by that?
+    // edit 1: What did I mean by that?
+    // Edit 2: Exactly, what did I mean by that?
     return true;
 }
 
